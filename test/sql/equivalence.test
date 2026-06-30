@@ -1,0 +1,43 @@
+# name: test/sql/equivalence.test
+# group: [vgi_iso20022]
+#
+# MT103 <-> pacs.008 dual-running equivalence (the migration-QA promise, spec
+# section D). The committed dual-run fixture pair must agree on amount, currency,
+# end_to_end_id, and debtor/creditor account.
+
+require-env VGI_ISO20022_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'iso20022' AS pay (TYPE vgi, LOCATION '${VGI_ISO20022_WORKER}');
+
+statement ok
+SET search_path = 'pay.main';
+
+# The two formats join on end_to_end_id and carry the same payment.
+query T
+SELECT m.amount = p.amount AND m.ccy = p.ccy
+       AND m.beneficiary_acct = p.creditor_iban
+       AND m.ordering_customer_acct = p.debtor_iban
+FROM mt103_read('data/dual/mt/*.txt')  m
+JOIN pacs008_read('data/dual/mx/*.xml') p USING (end_to_end_id);
+----
+true
+
+# No breaches: the mismatch query returns zero rows.
+query I
+SELECT count(*)
+FROM mt103_read('data/dual/mt/*.txt')  m
+JOIN pacs008_read('data/dual/mx/*.xml') p USING (end_to_end_id)
+WHERE NOT (m.amount = p.amount AND m.ccy = p.ccy
+           AND m.beneficiary_acct = p.creditor_iban);
+----
+0
+
+statement ok
+USE memory;
+
+statement ok
+DETACH pay;

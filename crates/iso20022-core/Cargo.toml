@@ -1,0 +1,25 @@
+[package]
+name = "iso20022-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Pure-compute SWIFT MT (MT103/202/940/942) and ISO 20022 MX (pacs/pain/camt) payment-message parsers for the iso20022 VGI worker (no Arrow/VGI deps). No network, no egress."
+
+[dependencies]
+# Exact money: comma-normalize MT amounts, parse MX decimal text — never f64.
+rust_decimal = { version = "1", default-features = false, features = ["std"] }
+# Dates / timestamps: YYMMDD century pivot (MT) and ISODate/ISODateTime (MX).
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+# MX is XML; a small event-driven DOM is built over quick-xml (permissive MIT).
+quick-xml = "0.36"
+# Serde derives on FileGlobCursor so the worker can externalize scan state.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"

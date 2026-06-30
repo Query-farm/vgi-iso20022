@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>PACS-MSG-1</MsgId>
+      <CreDtTm>2026-01-01T10:00:00Z</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <InstrId>INSTR-1</InstrId>
+        <EndToEndId>E2E-REF-001</EndToEndId>
+        <UETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</UETR>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="EUR">1234.56</IntrBkSttlmAmt>
+      <IntrBkSttlmDt>2026-01-01</IntrBkSttlmDt>
+      <ChrgBr>SHAR</ChrgBr>
+      <Dbtr><Nm>ACME CORP</Nm></Dbtr>
+      <DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct>
+      <DbtrAgt><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></DbtrAgt>
+      <Cdtr><Nm>WIDGETS SARL</Nm></Cdtr>
+      <CdtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></CdtrAcct>
+      <CdtrAgt><FinInstnId><BICFI>BNPAFRPP</BICFI></FinInstnId></CdtrAgt>
+      <Purp><Cd>GDDS</Cd></Purp>
+      <RmtInf><Ustrd>INVOICE 998877</Ustrd></RmtInf>
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>

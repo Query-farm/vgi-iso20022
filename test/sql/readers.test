@@ -1,0 +1,119 @@
+# name: test/sql/readers.test
+# group: [vgi_iso20022]
+#
+# File-glob *_read table functions + per-message LATERAL exploders against the
+# committed golden fixtures under data/. Paths are relative to the worker's
+# working directory (the fixtures are present in both the repo root and the
+# staged test tree). Asserted across every transport.
+
+require-env VGI_ISO20022_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'iso20022' AS pay (TYPE vgi, LOCATION '${VGI_ISO20022_WORKER}');
+
+statement ok
+SET search_path = 'pay.main';
+
+# --- pacs.008 -------------------------------------------------------------
+query T
+SELECT amount = 1234.56 AND ccy = 'EUR' AND end_to_end_id = 'E2E-REF-001'
+       AND debtor_iban = 'DE89370400440532013000' AND creditor_name = 'WIDGETS SARL'
+FROM pacs008_read('data/pacs008/*.xml');
+----
+true
+
+query T
+SELECT list_contains(remittance_unstructured, 'INVOICE 998877')
+FROM pacs008_read('data/pacs008/*.xml');
+----
+true
+
+# --- pacs.002 -------------------------------------------------------------
+query T
+SELECT tx_status = 'RJCT' AND status_reason_code = 'AM04' AND orig_end_to_end_id = 'E2E-REF-001'
+FROM pacs002_read('data/pacs002/*.xml');
+----
+true
+
+# --- pain.001 -------------------------------------------------------------
+query T
+SELECT ctrl_sum = 1234.56 AND pmt_method = 'TRF' AND amount = 1234.56
+FROM pain001_read('data/pain001/*.xml');
+----
+true
+
+# --- camt.053 statement + entries (LATERAL on raw) ------------------------
+query T
+SELECT account_iban = 'DE89370400440532013000' AND opening_balance = 1000.00
+       AND closing_balance = 1500.00 AND entry_count = 1
+FROM camt053_read('data/camt053/*.xml');
+----
+true
+
+query T
+SELECT account_iban = 'DE89370400440532013000' AND credit_debit = 'CRDT'
+       AND amount = 500.00 AND counterparty_name = 'ACME CORP'
+FROM camt053_entries((SELECT account_iban, raw FROM camt053_read('data/camt053/*.xml')));
+----
+true
+
+# --- camt.054 notification + entries --------------------------------------
+query T
+SELECT account_iban = 'DE89370400440532013000' AND credit_debit = 'DBIT'
+       AND amount = 250.50 AND counterparty_name = 'UTILITY CO'
+FROM camt054_entries((SELECT account_iban, raw FROM camt054_read('data/camt054/*.xml')));
+----
+true
+
+# --- MT103 ----------------------------------------------------------------
+query T
+SELECT senders_ref = 'TXN-REF-1' AND amount = 1234.56 AND ccy = 'EUR'
+       AND beneficiary_acct = 'FR1420041010050500013M02606' AND uetr IS NOT NULL
+FROM mt103_read('data/mt103/*.txt');
+----
+true
+
+# --- MT202 COV ------------------------------------------------------------
+query T
+SELECT is_cover AND amount = 5000000.00 AND beneficiary_inst = 'DEUTDEFF'
+       AND cov_beneficiary = 'UNDERLYING CREDITOR'
+FROM mt202_read('data/mt202/*.txt');
+----
+true
+
+# --- MT940 statement + lines ----------------------------------------------
+query T
+SELECT account = 'DE89370400440532013000' AND opening_balance = 1000.00
+       AND closing_balance = 1249.50 AND line_count = 2
+FROM mt940_read('data/mt940/*.txt');
+----
+true
+
+query I
+SELECT count(*) FROM mt940_lines((SELECT raw FROM mt940_read('data/mt940/*.txt')));
+----
+2
+
+query T
+SELECT credit_debit = 'D' AND amount = 250.50 AND transaction_type_id = 'NMSC'
+       AND narrative_struct['20'] = 'RENT'
+FROM mt940_lines((SELECT account, raw FROM mt940_read('data/mt940/*.txt')))
+WHERE line_idx = 1;
+----
+true
+
+# --- MT942 interim report + lines -----------------------------------------
+query T
+SELECT floor_limit_credit = 1000.00 AND debit_count = 5 AND credit_count = 3
+FROM mt942_read('data/mt942/*.txt');
+----
+true
+
+statement ok
+USE memory;
+
+statement ok
+DETACH pay;

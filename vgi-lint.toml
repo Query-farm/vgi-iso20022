@@ -1,0 +1,24 @@
+# vgi-lint-check configuration for vgi-iso20022.
+#
+# Every parser in this worker is a pure, in-engine transform over a message
+# (VARCHAR / BLOB) or a local file glob — no network, no backend, no external
+# state. The scalar and per-message (table-in-out) functions can therefore be
+# executed offline by the linter against inline message text, so execution stays
+# ENABLED and the whole suite is gated at `info`.
+#
+# The file-glob `*_read` table functions intentionally carry NO executable
+# example (a file scan returns zero rows without the data file present, VGI902);
+# their usage is documented via doc_md + result_columns_md instead, the same
+# convention the fixedformat worker's read_fixed uses.
+#
+# The catalog `source_url` (-> iso20022.org), per-object tags, titles,
+# doc_llm/doc_md, per-arg docs, and example queries are emitted from the worker's
+# FunctionMetadata (see crates/iso20022-worker/src/**), which the linter reads
+# over VGI.
+[tool.vgi-lint-check]
+select = ["ALL"]
+ignore = []
+fail_on = "info"
+
+[tool.vgi-lint-check.options]
+column_comment_min_ratio = 0.8

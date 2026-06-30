@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10">
+  <FIToFIPmtStsRpt>
+    <GrpHdr><MsgId>STS-1</MsgId><CreDtTm>2026-01-01T11:00:00Z</CreDtTm></GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>PACS-MSG-1</OrgnlMsgId>
+      <OrgnlMsgNmId>pacs.008.001.08</OrgnlMsgNmId>
+    </OrgnlGrpInfAndSts>
+    <TxInfAndSts>
+      <OrgnlEndToEndId>E2E-REF-001</OrgnlEndToEndId>
+      <OrgnlUETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</OrgnlUETR>
+      <TxSts>RJCT</TxSts>
+      <StsRsnInf><Rsn><Cd>AM04</Cd></Rsn><AddtlInf>Insufficient funds</AddtlInf></StsRsnInf>
+    </TxInfAndSts>
+  </FIToFIPmtStsRpt>
+</Document>

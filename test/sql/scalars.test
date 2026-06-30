@@ -1,0 +1,103 @@
+# name: test/sql/scalars.test
+# group: [vgi_iso20022]
+#
+# Scalar + per-message functions over INLINE message text (no files), so these
+# assertions are identical across the subprocess / http / unix transports.
+
+require-env VGI_ISO20022_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'iso20022' AS pay (TYPE vgi, LOCATION '${VGI_ISO20022_WORKER}');
+
+statement ok
+SET search_path = 'pay.main';
+
+# Version is a non-empty semver string.
+query T
+SELECT iso20022_version() IS NOT NULL AND length(iso20022_version()) > 0;
+----
+true
+
+# Sniff a SWIFT MT103 type from inline text.
+query T
+SELECT iso20022_mt_type('{1:F01X}{2:I103DEUTDEFFXXXXN}{4:
+:20:R
+:32A:260101EUR1,00
+-}');
+----
+MT103
+
+# An MX (XML) message is not an MT -> NULL.
+query T
+SELECT iso20022_mt_type('<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"><FIToFICstmrCdtTrf/></Document>') IS NULL;
+----
+true
+
+# Read a raw MT field by tag (folded multi-line value compared as one string).
+query T
+SELECT iso20022_mt103_field('{1:F01X}{2:I103X}{4:
+:20:R
+:50K:/DE89370400440532013000
+ACME CORP
+-}', '50K') = '/DE89370400440532013000' || chr(10) || 'ACME CORP';
+----
+true
+
+# Exact :32A: settled amount (no float drift).
+query T
+SELECT iso20022_mt103_amount('{1:F01X}{2:I103X}{4:
+:20:R
+:32A:260101EUR1234,56
+-}') = 1234.56;
+----
+true
+
+# A good MT103 validates ok with no errors.
+query T
+SELECT (iso20022_validate('{1:F01X}{2:I103X}{3:{121:e3bf1c2a-1111-4aaa-8bbb-1234567890ab}}{4:
+:20:R
+:23B:CRED
+:32A:260101EUR1,00
+:50K:/DE89370400440532013000
+ACME
+:59:/FR1420041010050500013M02606
+WIDGETS
+:71A:SHA
+-}')).ok;
+----
+true
+
+# A broken charge code is flagged (ok = false, non-empty errors).
+query T
+SELECT (iso20022_validate('{1:F01X}{2:I103X}{4:
+:20:R
+:71A:ZZZ
+-}')).ok;
+----
+false
+
+# camt053_entries explodes a statement's Ntry rows from an inline relation.
+query T
+SELECT credit_debit = 'CRDT' AND amount = 500.00 AND end_to_end_id = 'E2E-REF-001'
+FROM camt053_entries((SELECT '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><Stmt><Id>S</Id><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><NtryDtls><TxDtls><Refs><EndToEndId>E2E-REF-001</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>' AS raw));
+----
+true
+
+# mt940_lines explodes :61:/:86: lines from an inline relation.
+query I
+SELECT count(*) FROM mt940_lines((SELECT ':20:S
+:61:2601020102C500,00NTRFNONREF//BANK-A
+:86:GROCERY
+:61:2601030103D250,50NMSCREF//BANK-B
+:86:RENT' AS raw));
+----
+2
+
+statement ok
+USE memory;
+
+statement ok
+DETACH pay;
