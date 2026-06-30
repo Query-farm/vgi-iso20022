@@ -13,7 +13,7 @@ rust_decimal = { version = "1", default-features = false, features = ["std"] }
 # Dates / timestamps: YYMMDD century pivot (MT) and ISODate/ISODateTime (MX).
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 # MX is XML; a small event-driven DOM is built over quick-xml (permissive MIT).
-quick-xml = "0.36"
+quick-xml = "0.41"
 # Serde derives on FileGlobCursor so the worker can externalize scan state.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
