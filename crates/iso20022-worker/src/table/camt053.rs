@@ -10,7 +10,8 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per `Stmt`: `msg_id`, `stmt_id`, `stmt_seq_nb`, `account_iban` / \
+const RESULT_MD: &str = "One row per `Stmt`: `msg_id`, `creation_dt`, `stmt_id`, `stmt_seq_nb`, \
+`account_iban` / \
 `account_other` / `account_ccy` / `account_owner`, `from_dt`/`to_dt`, signed `opening_balance` / \
 `closing_balance` / `closing_available` DECIMAL(38,9) + `ccy`, `entry_count`, `sum_credits` / \
 `sum_debits`, plus `raw` (whole document) and `path`. Pair with `camt053_entries(raw)` for the lines.";

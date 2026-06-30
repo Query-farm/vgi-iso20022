@@ -27,7 +27,12 @@ pub fn table() -> ReadTable {
         doc_md: "Read camt.054 debit/credit notifications into rows (one per Ntfctn).",
         keywords: "camt.054, camt054, BkToCstmrDbtCdtNtfctn, notification, debit credit advice, \
                    iso 20022, entries, reconciliation",
-        result_columns_md: "One row per `Ntfctn`, same columns as `camt053_read`. Pair with \
-            `camt054_entries(raw)` for the individual notification lines.",
+        result_columns_md: "One row per `Ntfctn`, sharing the `camt053_read` column layout: \
+            `msg_id`, `creation_dt`, `stmt_id` (from `Ntfctn/Id`), `stmt_seq_nb`, `account_iban` / \
+            `account_other` / `account_ccy` / `account_owner`, `from_dt`/`to_dt`, signed \
+            `opening_balance` / `closing_balance` / `closing_available` DECIMAL(38,9) + `ccy` \
+            (balances are usually absent on a notification and come back NULL unless present), \
+            `entry_count`, `sum_credits` / `sum_debits`, plus `raw` (whole document) and `path`. \
+            Pair with `camt054_entries(raw)` to explode the individual notification `Ntry` lines.",
     }
 }

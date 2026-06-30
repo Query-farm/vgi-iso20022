@@ -8,7 +8,9 @@
 //! - `vgi.keywords` (VGI126/138) — a JSON array of search terms/synonyms
 //!
 //! Per-object `vgi.source_url` is intentionally NOT emitted here: it belongs on
-//! the catalog object only (VGI139), which already points at iso20022.org.
+//! the catalog object only (VGI139), which already carries the worker's
+//! `source_url` (the project repository). The open ISO 20022 standard itself
+//! (iso20022.org) is cited in the catalog `doc_md` prose.
 
 /// Encode comma-separated keywords as the JSON array of strings that
 /// `vgi.keywords` requires (VGI138).
