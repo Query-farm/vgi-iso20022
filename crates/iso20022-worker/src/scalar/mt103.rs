@@ -40,6 +40,7 @@ impl ScalarFunction for Mt103Field {
             "vgi.executable_examples".into(),
             r#"[{"description":"Read the :50K: ordering customer.","sql":"SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\n:20:R\n:50K:/123\nACME CORP\n-}', '50K') AS ordering_customer"}]"#.into(),
         ));
+        tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {
             description: "Return the raw text of an MT field by tag (newline-joined if repeatable)"
                 .into(),
@@ -65,8 +66,8 @@ impl ScalarFunction for Mt103Field {
                 "tag",
                 1,
                 DataType::Utf8,
-                "The SWIFT field tag to read, e.g. '50K', '59', '71F', '32A'. A bare numeric \
-                 prefix ('50') matches any option variant present.",
+                "The SWIFT field tag to read, e.g. '50K', '59', '71F', '32A'. A bare digits-only \
+                 prefix ('50') matches whichever option variant is present (50A/50F/50K).",
             ),
         ]
     }
@@ -121,6 +122,7 @@ impl ScalarFunction for Mt103Amount {
             "vgi.executable_examples".into(),
             r#"[{"description":"Exact :32A: amount.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount"}]"#.into(),
         ));
+        tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {
             description: "Return the :32A: interbank settled amount as DECIMAL(38,9)".into(),
             return_type: Some(DataType::Decimal128(MONEY_PRECISION, MONEY_SCALE)),

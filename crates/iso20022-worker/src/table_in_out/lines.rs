@@ -101,10 +101,11 @@ pub fn mt940_lines() -> PerMessageTable {
         build,
         title: "Explode MT940 Statement Lines",
         doc_llm: "Explode the :61: statement lines of MT940 statements (each joined to its :86: \
-                  narrative) into one row per line, with every input column passed through. Call it \
-                  with the relation to explode, e.g. \
-                  mt940_lines((SELECT account, raw FROM mt940_read('/data/*.txt'))): value/entry \
-                  dates, credit/debit mark, amount, type, references, narrative + structured map.",
+                  narrative) into one row per line, with every input column passed through. Pass a \
+                  relation whose `raw` column (or the column named by `msg`) holds each statement — \
+                  typically the output of mt940_read — to get value/entry dates, credit/debit mark, \
+                  amount, type, references, and the narrative plus its structured map. See the \
+                  executable example for the exact call shape.",
         doc_md: "Explode MT940 :61: statement lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt940, statement lines, 61, 86, narrative, credit debit, transaction type, \
                    reconciliation, passthrough, fin",
@@ -122,8 +123,9 @@ pub fn mt942_lines() -> PerMessageTable {
         title: "Explode MT942 Report Lines",
         doc_llm: "Explode the :61: lines of MT942 interim reports (each joined to its :86: \
                   narrative) into one row per line — identical column shape to mt940_lines, with \
-                  input columns passed through. Call it with the relation to explode, e.g. \
-                  mt942_lines((SELECT account, raw FROM mt942_read('/data/*.txt'))).",
+                  input columns passed through. Pass a relation whose `raw` column (or the column \
+                  named by `msg`) holds each report, typically the output of mt942_read. See the \
+                  executable example for the exact call shape.",
         doc_md: "Explode MT942 :61: report lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt942, interim report, statement lines, 61, 86, narrative, intraday, \
                    reconciliation, passthrough, fin",

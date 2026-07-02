@@ -35,6 +35,7 @@ impl TableFunction for ReadTable {
             self.title, self.doc_llm
         );
         let mut tags = crate::meta::object_tags(self.title, self.doc_llm, &doc_md, self.keywords);
+        tags.push(("vgi.category".into(), "Message readers".into()));
         tags.push((
             "vgi.result_columns_md".into(),
             self.result_columns_md.into(),
@@ -54,7 +55,7 @@ impl TableFunction for ReadTable {
             "path",
             0,
             "any",
-            "Path(s) to the message file(s) to read on the worker host. A single VARCHAR path, or \
+            "Path(s) to the message file(s) to read on the worker host. A single file path, or \
              a glob such as '/data/statements/*.xml' to scan every matching file in sorted order \
              (their rows are concatenated). All reads are local — no network, no egress.",
         )]

@@ -38,6 +38,7 @@ impl ScalarFunction for MtType {
             "vgi.executable_examples".into(),
             r#"[{"description":"Sniff an inline MT103.","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01BANKBEBBAXXX0000000000}{2:I103DEUTDEFFXXXXN}{4:\n:20:R\n:32A:260101EUR1,00\n-}') AS mt"}]"#.into(),
         ));
+        tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {
             description: "Detect a SWIFT MT message's type label (NULL for MX/unknown)".into(),
             return_type: Some(DataType::Utf8),

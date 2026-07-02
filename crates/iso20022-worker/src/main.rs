@@ -59,23 +59,21 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 "vgi.doc_md".to_string(),
                 "# iso20022 — SWIFT MT & ISO 20022 MX Payment Parsing in SQL\n\n\
                  **Turn SWIFT MT and ISO 20022 MX payment messages into typed, queryable rows \
-                 directly in DuckDB.** The worker ATTACHes over Apache Arrow and exposes table \
-                 functions that scan a glob of payment files — `mt103_read`, `mt202_read`, \
-                 `mt940_read`, `mt942_read`, `pacs008_read`, `pacs002_read`, `pain001_read`, \
-                 `camt053_read`, `camt054_read` — plus per-message functions that explode statement \
-                 entries and lines (`camt053_entries`, `camt054_entries`, `mt940_lines`, \
-                 `mt942_lines`) and scalars for sniffing (`iso20022_mt_type`), field access \
-                 (`iso20022_mt103_field`, `iso20022_mt103_amount`), and validation \
-                 (`iso20022_validate`).\n\n\
+                 directly in DuckDB.** ATTACH the worker over Apache Arrow and parse FIN/MT files \
+                 and MX XML documents locally — one typed row per message, transaction, or statement \
+                 entry — so payments become plain relational data instead of something you feed to a \
+                 bespoke parser.\n\n\
                  It is built for **bank / fintech / payment-processor** data teams doing \
-                 reconciliation, ISO 20022 migration dual-running QA (MT103 vs pacs.008 \
-                 equivalence), and sanctions/feature extraction. Money is parsed with exact decimals \
-                 (no float drift) so amount-equality joins hold; dates use the SWIFT century pivot \
-                 and ISO 8601. **Data residency:** the worker makes zero outbound calls and parses \
-                 every message locally — debtor/creditor names, IBANs, and amounts never leave the \
-                 host.\n\n\
-                 The parsers are built on permissive open-source components and the open, freely \
-                 published ISO 20022 message standard (iso20022.org); see the \
+                 reconciliation, ISO 20022 migration dual-running QA (MT vs MX equivalence), and \
+                 sanctions/feature extraction. Money is parsed with exact decimals (no float drift) \
+                 so amount-equality joins hold; dates use the SWIFT century pivot and ISO 8601. \
+                 **Data residency:** the worker makes zero outbound calls and parses every message \
+                 locally — debtor/creditor names, IBANs, and amounts never leave the host.\n\n\
+                 Reach for it whenever you have MT statements or transfers, or camt/pacs/pain XML, \
+                 on disk (or inline) and want them as rows: list the schema to discover the file \
+                 readers, statement exploders, and inspection scalars it provides. The parsers are \
+                 built on permissive open-source components and the open, freely published ISO 20022 \
+                 message standard (iso20022.org); see the \
                  [source repository](https://github.com/Query-farm/vgi-iso20022) for the full \
                  catalog and examples. Part of the [Query.Farm](https://query.farm) VGI ecosystem of \
                  DuckDB workers."
@@ -129,6 +127,24 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             ),
             tags: vec![
                 ("vgi.title".to_string(), "iso20022 — parsing functions".to_string()),
+                // Ordered navigation registry (VGI413). Each object carries a
+                // matching `vgi.category` tag naming exactly one of these.
+                (
+                    "vgi.categories".to_string(),
+                    "[{\"name\":\"Message readers\",\
+                       \"description\":\"File-glob table functions that scan payment message files \
+                       on the worker host and return one typed row per message, transaction, or \
+                       statement.\"},\
+                      {\"name\":\"Statement exploders\",\
+                       \"description\":\"Per-message table functions that explode a statement or \
+                       notification into its individual entries or lines, passing every input \
+                       column through so children correlate back to the parent.\"},\
+                      {\"name\":\"Message inspection\",\
+                       \"description\":\"Scalar functions that sniff the type of, extract fields \
+                       and the settled amount from, validate, and report the version of a single \
+                       inline message.\"}]"
+                        .to_string(),
+                ),
                 (
                     "vgi.keywords".to_string(),
                     keywords_json(

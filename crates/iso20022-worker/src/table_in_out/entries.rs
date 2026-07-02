@@ -153,9 +153,10 @@ pub fn camt053_entries() -> PerMessageTable {
         title: "Explode camt.053 Entries",
         doc_llm: "Explode the Ntry rows of camt.053 statements (or any camt.053/054 documents) into \
                   one row per entry, with multi-TxDtls split by tx_idx and every input column passed \
-                  through. Call it with the relation to explode, e.g. \
-                  camt053_entries((SELECT account_iban, raw FROM camt053_read('/data/*.xml'))), for \
-                  reconciliation: amount, credit/debit, dates, references, counterparty, remittance.",
+                  through. Pass a relation whose `raw` column (or the column named by `msg`) holds \
+                  each statement — typically the output of camt053_read — to get amount, \
+                  credit/debit, dates, references, counterparty, and remittance for reconciliation. \
+                  See the executable example for the exact call shape.",
         doc_md: "Explode camt.053 statement Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.053, entries, ntry, statement lines, reconciliation, credit debit, \
                    end to end id, counterparty, passthrough, iso 20022",
@@ -173,8 +174,9 @@ pub fn camt054_entries() -> PerMessageTable {
         title: "Explode camt.054 Entries",
         doc_llm: "Explode the Ntry rows of camt.054 debit/credit notifications into one row per \
                   entry — identical column shape to camt053_entries, so reconciliation queries are \
-                  portable. Call it with the relation to explode, e.g. \
-                  camt054_entries((SELECT account_iban, raw FROM camt054_read('/data/*.xml'))).",
+                  portable. Pass a relation whose `raw` column (or the column named by `msg`) holds \
+                  each notification, typically the output of camt054_read. See the executable \
+                  example for the exact call shape.",
         doc_md: "Explode camt.054 notification Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.054, entries, ntry, notification, debit credit advice, reconciliation, \
                    counterparty, passthrough, iso 20022",

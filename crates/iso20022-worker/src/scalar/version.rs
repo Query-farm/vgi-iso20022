@@ -38,6 +38,7 @@ impl ScalarFunction for Iso20022Version {
                     "vgi.executable_examples".into(),
                     r#"[{"description":"Worker version.","sql":"SELECT iso20022.main.iso20022_version() AS version"}]"#.into(),
                 ));
+                t.push(("vgi.category".into(), "Message inspection".into()));
                 t
             },
             ..Default::default()

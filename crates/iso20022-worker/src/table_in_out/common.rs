@@ -66,6 +66,7 @@ impl TableInOutFunction for PerMessageTable {
             self.title, self.doc_llm
         );
         let mut tags = crate::meta::object_tags(self.title, self.doc_llm, &doc_md, self.keywords);
+        tags.push(("vgi.category".into(), "Statement exploders".into()));
         tags.push((
             "vgi.result_columns_md".into(),
             self.result_columns_md.into(),

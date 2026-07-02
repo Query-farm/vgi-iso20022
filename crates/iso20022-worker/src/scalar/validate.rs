@@ -54,6 +54,7 @@ impl ScalarFunction for Validate {
             "vgi.executable_examples".into(),
             r#"[{"description":"Validate an inline MT103.","sql":"SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\n:20:R\n:23B:CRED\n:32A:260101EUR1,00\n:50K:/DE89370400440532013000\nACME\n:59:/FR1420041010050500013M02606\nWIDGETS\n:71A:SHA\n-}')).ok AS ok"}]"#.into(),
         ));
+        tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {
             description: "Validate an MT/MX message: STRUCT(ok BOOLEAN, errors VARCHAR[])".into(),
             return_type: Some(DataType::Struct(struct_fields())),
