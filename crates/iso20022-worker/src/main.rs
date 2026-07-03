@@ -164,10 +164,24 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ),
                 (
                     "vgi.doc_md".to_string(),
-                    "The single schema for the `iso20022` worker. It holds the file-glob `*_read` \
-                     table functions, the per-message `*_entries` / `*_lines` exploders, and the \
-                     `iso20022_*` scalar functions (mt_type, mt103_field, mt103_amount, validate, \
-                     version)."
+                    "## The `iso20022` worker schema\n\n\
+                     This is the single schema for the worker. Everything it exposes turns SWIFT \
+                     MT and ISO 20022 MX payment messages into typed, relational rows you can query \
+                     directly in SQL, with **no network access and no egress** — messages are \
+                     parsed on the host.\n\n\
+                     The objects fall into three groups:\n\n\
+                     - **Message readers** scan a glob of message files on disk and return one \
+                       typed row per message, transaction, or statement.\n\
+                     - **Statement exploders** take an already-selected statement or notification \
+                       and unnest it into its individual entries or lines, carrying every input \
+                       column through so children correlate back to the parent.\n\
+                     - **Message inspection** scalars sniff the message type, pull individual \
+                       fields and the exact settled amount out of a single inline message, \
+                       validate it against structural and CBPR+ rules, and report the worker \
+                       version.\n\n\
+                     Money is parsed with exact decimals so amount-equality joins hold, and dates \
+                     use the SWIFT century pivot plus ISO 8601. List the schema to discover the \
+                     concrete functions and their documented examples."
                         .to_string(),
                 ),
                 // Offline-runnable inline examples (the file-glob `*_read`
