@@ -177,10 +177,8 @@ fn validate_mx(xml: &str, id: &str, errors: &mut Vec<String>) {
                 check_amount_node(Some(amt), "Amt", errors);
             }
         }
-        "pacs.002" => {
-            if root.find_first("FIToFIPmtStsRpt").is_none() {
-                errors.push("MX020: pacs.002 missing FIToFIPmtStsRpt".into());
-            }
+        "pacs.002" if root.find_first("FIToFIPmtStsRpt").is_none() => {
+            errors.push("MX020: pacs.002 missing FIToFIPmtStsRpt".into());
         }
         _ => {}
     }
