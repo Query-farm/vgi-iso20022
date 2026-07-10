@@ -12,15 +12,8 @@ use iso20022_core::mt::mt940::{self, Line};
 use super::common::PerMessageTable;
 use crate::cols::*;
 
-const RESULT_MD: &str =
-    "The passthrough input columns, then one row per `:61:` line (joined to its \
-`:86:`): `line_idx`, `value_date`, `entry_date`, `credit_debit` (C/D/RC/RD), `funds_code`, \
-`amount` DECIMAL(38,9) (always positive; sign via `credit_debit`), `transaction_type_id` \
-(e.g. NTRF/NMSC), `customer_ref`, `bank_ref`, `supplementary`, flattened `narrative`, and \
-`narrative_struct` MAP(VARCHAR,VARCHAR) (populated for structured `?NN`/`>NN` narratives).";
-
-const EXAMPLES: &str = r#"[{"description":"Explode the lines of an inline MT940 statement.","sql":"SELECT value_date, credit_debit, amount FROM iso20022.main.mt940_lines((SELECT ':20:S\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:86:GROCERY STORE' AS raw))"}]"#;
-const EXAMPLES_942: &str = r#"[{"description":"Explode the lines of an inline MT942 report.","sql":"SELECT value_date, credit_debit, amount FROM iso20022.main.mt942_lines((SELECT ':20:I\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:86:INCOMING' AS raw))"}]"#;
+const EXAMPLES: &str = r#"[{"description":"Read an MT940 statement inline, then explode its :61: lines (one row per line, joined to its :86: narrative).","sql":"SELECT value_date, credit_debit, amount, transaction_type_id FROM iso20022.main.mt940_lines((SELECT raw FROM iso20022.main.mt940_read('{1:F01ACMEDEFFAXXX0000000000}{2:O940DEUTDEFFXXXXN}{4:\n:20:STMT-1\n:25:DE89370400440532013000\n:28C:12345/1\n:60F:C260101EUR1000,00\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:86:GROCERY STORE PAYMENT\n:61:2601030103D250,50NMSCCUST-REF//BANK-B\n:86:RENT\n:62F:C260103EUR1249,50\n-}')))"}]"#;
+const EXAMPLES_942: &str = r#"[{"description":"Read an MT942 interim report inline, then explode its :61: lines.","sql":"SELECT value_date, credit_debit, amount FROM iso20022.main.mt942_lines((SELECT raw FROM iso20022.main.mt942_read('{1:F01ACMEDEFFAXXX0000000000}{2:O942DEUTDEFFXXXXN}{4:\n:20:INTERIM-1\n:25:DE89370400440532013000\n:28C:99/1\n:34F:EURD0,00\n:34F:EURC1000,00\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:86:INCOMING\n-}')))"}]"#;
 
 /// The child-only `:61:`/`:86:` line schema (appended after the passthrough columns).
 pub fn schema() -> SchemaRef {
@@ -100,16 +93,20 @@ pub fn mt940_lines() -> PerMessageTable {
         child_schema: schema,
         build,
         title: "Explode MT940 Statement Lines",
-        doc_llm: "Explode the :61: statement lines of MT940 statements (each joined to its :86: \
-                  narrative) into one row per line, with every input column passed through. Pass a \
-                  relation whose `raw` column (or the column named by `msg`) holds each statement — \
-                  typically the output of mt940_read — to get value/entry dates, credit/debit mark, \
-                  amount, type, references, and the narrative plus its structured map. See the \
-                  executable example for the exact call shape.",
+        doc_llm: "Explode the :61: statement lines of one or more MT940 end-of-day statements — \
+                  each :61: line joined to its following :86: narrative — into one row per line. \
+                  Pass a relation whose `raw` column (or the column named by `msg :=`) holds each \
+                  statement: for example the output of `mt940_read('…')`, or any relation exposing \
+                  a `raw` message column, or an inline statement. Every input column is passed \
+                  through, repeated once per child line, so lines correlate back to their parent \
+                  statement. Each output line carries `line_idx`, `value_date` and `entry_date` \
+                  (DATE), the `credit_debit` mark (C/D/RC/RD), positive `amount` DECIMAL(38,9), \
+                  `transaction_type_id` (e.g. NTRF/NMSC), `customer_ref`/`bank_ref`, the flattened \
+                  `narrative`, and `narrative_struct` MAP(VARCHAR, VARCHAR) for structured \
+                  `?NN`/`>NN` narratives. See the executable example for the exact call shape.",
         doc_md: "Explode MT940 :61: statement lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt940, statement lines, 61, 86, narrative, credit debit, transaction type, \
                    reconciliation, passthrough, fin",
-        result_columns_md: RESULT_MD,
         executable_examples: EXAMPLES,
     }
 }
@@ -121,15 +118,18 @@ pub fn mt942_lines() -> PerMessageTable {
         child_schema: schema,
         build,
         title: "Explode MT942 Report Lines",
-        doc_llm: "Explode the :61: lines of MT942 interim reports (each joined to its :86: \
-                  narrative) into one row per line — identical column shape to mt940_lines, with \
-                  input columns passed through. Pass a relation whose `raw` column (or the column \
-                  named by `msg`) holds each report, typically the output of mt942_read. See the \
+        doc_llm: "Explode the :61: lines of one or more MT942 interim (intra-day) reports — each \
+                  :61: line joined to its following :86: narrative — into one row per line. \
+                  Identical column shape to mt940_lines (`line_idx`, `value_date`/`entry_date`, \
+                  `credit_debit`, positive `amount` DECIMAL(38,9), `transaction_type_id`, \
+                  references, flattened `narrative`, and `narrative_struct` MAP), with every input \
+                  column passed through so lines correlate back to their parent report. Pass a \
+                  relation whose `raw` column (or the column named by `msg :=`) holds each report: \
+                  for example the output of `mt942_read('…')`, or an inline report. See the \
                   executable example for the exact call shape.",
         doc_md: "Explode MT942 :61: report lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt942, interim report, statement lines, 61, 86, narrative, intraday, \
                    reconciliation, passthrough, fin",
-        result_columns_md: RESULT_MD,
         executable_examples: EXAMPLES_942,
     }
 }

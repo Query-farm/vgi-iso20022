@@ -1,11 +1,18 @@
 //! Shared file-glob scan machinery for the `*_read` table functions.
 //!
-//! A `*_read` function resolves its glob/path argument to a [`FileGlobCursor`]
-//! of concrete paths, then streams one file's rows per `next_batch`. The cursor
-//! is the only state and is externalized via `encode_resume` / `restore_resume`
-//! so DuckDB can suspend / resume / parallelize the scan. A file that is missing
-//! or fails to parse is skipped (its row count is simply zero) — a malformed file
+//! A `*_read` function resolves its argument to a [`FileGlobCursor`] of concrete
+//! entries, then streams one entry's rows per `next_batch`. The cursor is the
+//! only state and is externalized via `encode_resume` / `restore_resume` so
+//! DuckDB can suspend / resume / parallelize the scan. A file that is missing or
+//! fails to parse is skipped (its row count is simply zero) — a malformed file
 //! never aborts the query.
+//!
+//! The argument is overloaded the same way as the scalar/exploder message
+//! argument: a value that **looks like an inline message** (MX XML starting with
+//! `<`, an MT `{…}` block or `:NN:` tag stream, or any multi-line text) is parsed
+//! directly as content; anything else is treated as a file path or glob and read
+//! from the worker host. This lets an example / agent task demonstrate a reader
+//! on inline text without a data file present.
 
 use arrow_array::RecordBatch;
 use arrow_schema::SchemaRef;
@@ -27,10 +34,13 @@ pub fn resolve_paths(args: &Arguments) -> Result<Vec<String>> {
     Ok(expand(&arg))
 }
 
-/// Expand a single path/glob into concrete paths (sorted). Non-glob inputs are
-/// returned verbatim so a literal filename still scans.
+/// Expand a single path/glob into concrete paths (sorted). An inline message is
+/// returned verbatim (never globbed); non-glob inputs are returned verbatim so a
+/// literal filename still scans.
 pub fn expand(pattern: &str) -> Vec<String> {
-    if pattern.contains(['*', '?', '[']) {
+    if crate::arrow_io::looks_like_message(pattern) {
+        vec![pattern.to_string()]
+    } else if pattern.contains(['*', '?', '[']) {
         match glob::glob(pattern) {
             Ok(paths) => {
                 let mut out: Vec<String> = paths
@@ -66,12 +76,17 @@ impl GlobProducer {
 
 impl TableProducer for GlobProducer {
     fn next_batch(&mut self, _out: &mut OutputCollector) -> Result<Option<RecordBatch>> {
-        while let Some(path) = self.cursor.current().map(str::to_string) {
+        while let Some(entry) = self.cursor.current().map(str::to_string) {
             self.cursor.next_file();
-            let Ok(bytes) = std::fs::read(&path) else {
-                continue; // unreadable file -> skip
+            // An inline message is its own content; otherwise read the file.
+            let (path, content) = if crate::arrow_io::looks_like_message(&entry) {
+                ("<inline>".to_string(), entry)
+            } else {
+                let Ok(bytes) = std::fs::read(&entry) else {
+                    continue; // unreadable file -> skip
+                };
+                (entry, String::from_utf8_lossy(&bytes).into_owned())
             };
-            let content = String::from_utf8_lossy(&bytes).into_owned();
             let batch = (self.build)(&path, &content);
             if batch.num_rows() > 0 {
                 // Re-key the batch onto our declared schema (identical layout).

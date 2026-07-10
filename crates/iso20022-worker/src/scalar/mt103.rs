@@ -66,8 +66,11 @@ impl ScalarFunction for Mt103Field {
                 "tag",
                 1,
                 DataType::Utf8,
-                "The SWIFT field tag to read, e.g. '50K', '59', '71F', '32A'. A bare digits-only \
-                 prefix ('50') matches whichever option variant is present (50A/50F/50K).",
+                "The SWIFT field tag to read from message block 4. Tags form an open vocabulary \
+                 rather than a fixed set — a two-digit field number with an optional single option \
+                 letter. Passing only the digits (for example 50) matches whichever option variant \
+                 is present, such as 50A or 50F or 50K; passing the full tag such as 32A reads \
+                 exactly that field.",
             ),
         ]
     }

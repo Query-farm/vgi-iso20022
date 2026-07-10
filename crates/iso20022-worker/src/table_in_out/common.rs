@@ -43,7 +43,6 @@ pub struct PerMessageTable {
     pub doc_llm: &'static str,
     pub doc_md: &'static str,
     pub keywords: &'static str,
-    pub result_columns_md: &'static str,
     pub executable_examples: &'static str,
 }
 
@@ -61,15 +60,25 @@ impl TableInOutFunction for PerMessageTable {
         // doc_md is a richer Markdown section than the one-line `description`, so
         // it adds narrative an agent can't get from the description alone (VGI102).
         let doc_md = format!(
-            "# {}\n\n{}\n\nCall it with the relation to explode as a subquery (every input column is \
-             passed through, repeated once per child row). Local-only — no network, no egress.",
-            self.title, self.doc_llm
+            "# {}\n\n{}\n\n## Calling it\n\nThis is a table-in-out function: pass the relation to \
+             explode as a subquery, e.g. `{}((SELECT raw FROM <reader>('…')))`, or feed it any \
+             relation that exposes a `raw` message column (rename it with `msg := 'col'`). Every \
+             input column is passed through unchanged, repeated once per child row, so results \
+             correlate back to the parent.\n\n## Result schema\n\nThe passthrough input columns \
+             come first, followed by the fixed child columns — their names, types, and meanings \
+             are documented in `vgi.result_dynamic_columns_md`, and a runnable call is in \
+             `vgi.executable_examples`. Local-only — no network, no egress.",
+            self.title, self.doc_llm, self.name
         );
         let mut tags = crate::meta::object_tags(self.title, self.doc_llm, &doc_md, self.keywords);
         tags.push(("vgi.category".into(), "Statement exploders".into()));
+        // The result schema is dynamic (passthrough input columns ++ fixed child
+        // columns), so it is declared as `vgi.result_dynamic_columns_md`, generated
+        // from the child Arrow schema so the variant table can never drift from the
+        // emitted child columns (VGI307/326/322/323/414/910).
         tags.push((
-            "vgi.result_columns_md".into(),
-            self.result_columns_md.into(),
+            "vgi.result_dynamic_columns_md".into(),
+            crate::meta::result_dynamic_columns_md(&(self.child_schema)()),
         ));
         tags.push((
             "vgi.executable_examples".into(),

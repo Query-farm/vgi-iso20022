@@ -12,13 +12,6 @@ use iso20022_core::mx::camt::{self, Entry};
 use super::common::PerMessageTable;
 use crate::cols::*;
 
-const RESULT_MD: &str = "The passthrough input columns, then one row per `Ntry` (multi-`TxDtls` \
-split by `tx_idx`): `entry_idx`, `tx_idx`, `amount` DECIMAL(38,9) + `ccy`, `credit_debit` \
-(CRDT/DBIT), `reversal`, `status`, `booking_date`, `value_date`, `account_servicer_ref`, the four \
-`bank_tx_*` codes, the `end_to_end_id`/`tx_id`/`uetr`/`instr_id`/`mandate_id` references, \
-`counterparty_name`/`_iban`/`_agent_bic` (debtor for CRDT, creditor for DBIT), \
-`remittance_unstructured` VARCHAR[], `remittance_struct_ref`, and `addtl_entry_info`.";
-
 const EXAMPLES: &str = r#"[{"description":"Explode the entries of an inline camt.053 statement.","sql":"SELECT amount, credit_debit, end_to_end_id FROM iso20022.main.camt053_entries((SELECT '<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.08\"><BkToCstmrStmt><Stmt><Id>S</Id><Ntry><Amt Ccy=\"EUR\">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><NtryDtls><TxDtls><Refs><EndToEndId>E2E</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>' AS raw))"}]"#;
 
 const EXAMPLES_054: &str = r#"[{"description":"Explode the entries of an inline camt.054 notification.","sql":"SELECT amount, credit_debit, end_to_end_id FROM iso20022.main.camt054_entries((SELECT '<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.054.001.08\"><BkToCstmrDbtCdtNtfctn><Ntfctn><Id>N</Id><Ntry><Amt Ccy=\"EUR\">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><NtryDtls><TxDtls><Refs><EndToEndId>E2E</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>' AS raw))"}]"#;
@@ -160,7 +153,6 @@ pub fn camt053_entries() -> PerMessageTable {
         doc_md: "Explode camt.053 statement Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.053, entries, ntry, statement lines, reconciliation, credit debit, \
                    end to end id, counterparty, passthrough, iso 20022",
-        result_columns_md: RESULT_MD,
         executable_examples: EXAMPLES,
     }
 }
@@ -180,7 +172,6 @@ pub fn camt054_entries() -> PerMessageTable {
         doc_md: "Explode camt.054 notification Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.054, entries, ntry, notification, debit credit advice, reconciliation, \
                    counterparty, passthrough, iso 20022",
-        result_columns_md: RESULT_MD,
         executable_examples: EXAMPLES_054,
     }
 }

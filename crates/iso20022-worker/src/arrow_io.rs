@@ -27,7 +27,7 @@ pub fn text_str(col: &ArrayRef, row: usize) -> Result<Option<String>> {
 /// Does this VARCHAR look like an inline message rather than a file path? MX XML
 /// starts with `<`; MT starts with a `{…}` block or a bare `:NN:` tag stream; a
 /// multi-line value is also treated as inline content.
-fn looks_like_message(s: &str) -> bool {
+pub fn looks_like_message(s: &str) -> bool {
     let t = s.trim_start();
     t.starts_with('<') || t.starts_with('{') || t.starts_with(':') || t.contains('\n')
 }

@@ -10,12 +10,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str =
-    "One row per statement (`statement_idx` orders multiple statements within a \
-file): `transaction_ref`, `related_ref`, `account`, `statement_no`/`sequence_no`, signed \
-`opening_balance`/`closing_balance` + their D/C marks and dates, `opening_is_intermediate`, `ccy`, \
-`closing_available`, `forward_available`, `line_count`, plus `raw` (this statement's text, for \
-`mt940_lines(raw)`) and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline MT940 end-of-day statement header: account, currency, closing balance, and the number of statement lines.","sql":"SELECT transaction_ref, account, ccy, closing_balance, line_count FROM iso20022.main.mt940_read('{1:F01ACMEDEFFAXXX0000000000}{2:O940DEUTDEFFXXXXN}{4:\n:20:STMT-1\n:25:DE89370400440532013000\n:28C:12345/1\n:60F:C260101EUR1000,00\n:61:2601020102C500,00NTRFNONREF//BANK-A\nEXTRA INFO\n:86:GROCERY STORE PAYMENT\n:61:2601030103D250,50NMSCCUST-REF//BANK-B\n:86:?20RENT ?30BANK ?31ACC123\n:62F:C260103EUR1249,50\n:64:C260103EUR1249,50\n-}') WHERE account IS NOT NULL"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -105,7 +100,7 @@ pub fn table() -> ReadTable {
         doc_md: "Read SWIFT MT940 customer statements into rows (one per statement).",
         keywords: "mt940, swift mt, bank statement, opening balance, closing balance, 60F, 62F, \
                    statement lines, reconciliation, fin",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }
 

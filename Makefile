@@ -49,8 +49,9 @@ doc:
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 
 # Metadata-quality gate (matches CI's Query-farm/vgi-lint-check@v1 at fail-on=info).
+# Unpinned: always resolve the latest published vgi-lint-check, like CI's @v1 action.
 vgi-lint: build
-	uvx --from vgi-lint-check@0.37.0 vgi-lint lint "$(WORKER)" --fail-on info --no-check-links
+	uvx --prerelease=allow --from vgi-lint-check vgi-lint lint "$(WORKER)" --fail-on info --no-check-links
 
 clean:
 	cargo clean

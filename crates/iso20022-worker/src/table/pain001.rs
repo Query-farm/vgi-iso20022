@@ -9,10 +9,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per `CdtTrfTxInf` with its `PmtInf` parent carried down: \
-`msg_id`, `ctrl_sum`, `initiating_party`, `pmt_inf_id`, `pmt_method`, `requested_exec_date`, \
-debtor `*_name`/`*_iban`/`*_agent_bic`, `charge_bearer`, `end_to_end_id`, `uetr`, `amount` + `ccy`, \
-creditor `*`, `purpose_code`, `remittance_unstructured` VARCHAR[], plus `raw` and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline pain.001 customer credit-transfer initiation: read the debtor, instructed amount, and creditor for each CdtTrfTxInf.","sql":"SELECT msg_id, pmt_method, debtor_name, amount, ccy, creditor_name FROM iso20022.main.pain001_read('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\"><CstmrCdtTrfInitn><GrpHdr><MsgId>PAIN-1</MsgId><CreDtTm>2026-01-01T09:00:00Z</CreDtTm><CtrlSum>1234.56</CtrlSum><InitgPty><Nm>ACME CORP</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>PMT-1</PmtInfId><PmtMtd>TRF</PmtMtd><ReqdExctnDt><Dt>2026-01-02</Dt></ReqdExctnDt><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><DbtrAgt><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></DbtrAgt><CdtTrfTxInf><PmtId><EndToEndId>E2E-REF-001</EndToEndId></PmtId><Amt><InstdAmt Ccy=\"EUR\">1234.56</InstdAmt></Amt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr><CdtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></CdtrAcct><RmtInf><Ustrd>INVOICE 998877</Ustrd></RmtInf></CdtTrfTxInf></PmtInf></CstmrCdtTrfInitn></Document>') WHERE amount > 1000"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -121,6 +118,6 @@ pub fn table() -> ReadTable {
             "Read pain.001 customer credit-transfer initiations into rows (one per CdtTrfTxInf).",
         keywords: "pain.001, pain001, CstmrCdtTrfInitn, credit initiation, payment initiation, \
                    iso 20022, debtor, creditor, iban, requested execution date, ctrl sum",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }

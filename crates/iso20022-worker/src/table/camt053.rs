@@ -10,11 +10,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per `Stmt`: `msg_id`, `creation_dt`, `stmt_id`, `stmt_seq_nb`, \
-`account_iban` / \
-`account_other` / `account_ccy` / `account_owner`, `from_dt`/`to_dt`, signed `opening_balance` / \
-`closing_balance` / `closing_available` DECIMAL(38,9) + `ccy`, `entry_count`, `sum_credits` / \
-`sum_debits`, plus `raw` (whole document) and `path`. Pair with `camt053_entries(raw)` for the lines.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline camt.053 bank-to-customer statement header: account, closing balance, and how many booked entries it carries.","sql":"SELECT msg_id, account_iban, account_ccy, closing_balance, entry_count FROM iso20022.main.camt053_read('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.08\"><BkToCstmrStmt><GrpHdr><MsgId>CAMT053-1</MsgId><CreDtTm>2026-01-03T06:00:00Z</CreDtTm></GrpHdr><Stmt><Id>STMT-1</Id><ElctrncSeqNb>5</ElctrncSeqNb><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy><Ownr><Nm>ACME CORP</Nm></Ownr></Acct><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy=\"EUR\">1500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy=\"EUR\">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-01-02</Dt></BookgDt><ValDt><Dt>2026-01-02</Dt></ValDt><NtryDtls><TxDtls><Refs><EndToEndId>E2E-REF-001</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>') WHERE account_iban IS NOT NULL"}]"#;
 
 /// The fixed output schema (shared with the camt.054 notification reader).
 pub fn schema() -> SchemaRef {
@@ -101,7 +97,7 @@ pub fn table() -> ReadTable {
         doc_md: "Read camt.053 bank-to-customer statements into rows (one per Stmt).",
         keywords: "camt.053, camt053, BkToCstmrStmt, bank statement, opening balance, closing \
                    balance, iban, reconciliation, iso 20022, statement",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }
 

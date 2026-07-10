@@ -10,12 +10,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str =
-    "One row per interim report (`statement_idx` orders multiple within a file): \
-`transaction_ref`, `related_ref`, `account`, `statement_no`/`sequence_no`, `floor_limit_debit` / \
-`floor_limit_credit` (:34F:) + `ccy`, `datetime_indication` (:13D: TIMESTAMPTZ), \
-`debit_count`/`debit_sum` (:90D:), `credit_count`/`credit_sum` (:90C:), `line_count`, plus `raw` \
-(for `mt942_lines(raw)`) and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline MT942 interim (intra-day) statement header: account, currency, and the credit/debit turnover counts.","sql":"SELECT transaction_ref, account, ccy, credit_count, credit_sum, debit_count FROM iso20022.main.mt942_read('{1:F01ACMEDEFFAXXX0000000000}{2:O942DEUTDEFFXXXXN}{4:\n:20:INTERIM-1\n:25:DE89370400440532013000\n:28C:99/1\n:34F:EURD0,00\n:34F:EURC1000,00\n:13D:2601021430+0100\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:86:INCOMING\n:90D:5EUR2500,00\n:90C:3EUR1500,00\n-}') WHERE account IS NOT NULL"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -96,6 +91,6 @@ pub fn table() -> ReadTable {
         doc_md: "Read SWIFT MT942 interim transaction reports into rows (one per report).",
         keywords: "mt942, swift mt, interim report, floor limit, 34F, 90D, 90C, intraday, \
                    statement lines, fin",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }

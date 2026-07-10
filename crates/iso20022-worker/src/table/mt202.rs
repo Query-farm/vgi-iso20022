@@ -10,10 +10,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per MT202/COV message: `transaction_ref`, `related_ref`, \
-`value_date`/`ccy`/`amount`, the institution chain (`ordering_institution`, correspondents, \
-`intermediary`, `account_with_inst`, `beneficiary_inst`), `sender_to_receiver_info`, the `is_cover` \
-flag and the underlying-customer COV fields, `uetr`, plus `raw` and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline MT202 (general financial institution transfer / cover) and read its settled amount and beneficiary institution.","sql":"SELECT transaction_ref, related_ref, ccy, amount, beneficiary_inst FROM iso20022.main.mt202_read('{1:F01ACMEDEFFAXXX0000000000}{2:I202DEUTDEFFXXXXN}{3:{121:11111111-2222-4333-8444-555566667777}}{4:\n:20:FI-REF-9\n:21:REL-REF-9\n:32A:260102USD5000000,00\n:52A:CHASUS33\n:58A:DEUTDEFF\n:50K:/111\nUNDERLYING DEBTOR\n:59:/222\nUNDERLYING CREDITOR\n:70:COVER FOR MT103\n-}') WHERE amount > 1000000"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -90,6 +87,6 @@ pub fn table() -> ReadTable {
         doc_md: "Read SWIFT MT202 / MT202 COV financial-institution transfers into rows.",
         keywords: "mt202, mt202 cov, swift mt, fi transfer, cover payment, correspondent banking, \
                    beneficiary institution, uetr, fin",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }

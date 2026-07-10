@@ -9,10 +9,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per `TxInfAndSts` (group + original-group info carried down): \
-`msg_id`, `orig_msg_id`/`orig_msg_name`, `group_status`, the `orig_*` references (instr/e2e/tx/uetr), \
-`tx_status` (ACSC/ACSP/RJCT/PDNG…), `status_reason_code`/`status_reason_prop`, \
-`status_reason_addtl` VARCHAR[], `accept_dt`, plus `raw` and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline pacs.002 payment status report: read the original payment references and the rejection reason down each TxInfAndSts row.","sql":"SELECT msg_id, orig_tx_id, orig_uetr, group_status FROM iso20022.main.pacs002_read('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10\"><FIToFIPmtStsRpt><GrpHdr><MsgId>STS-1</MsgId><CreDtTm>2026-01-01T11:00:00Z</CreDtTm></GrpHdr><OrgnlGrpInfAndSts><OrgnlMsgId>PACS-MSG-1</OrgnlMsgId><OrgnlMsgNmId>pacs.008.001.08</OrgnlMsgNmId></OrgnlGrpInfAndSts><TxInfAndSts><OrgnlEndToEndId>E2E-REF-001</OrgnlEndToEndId><OrgnlUETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</OrgnlUETR><TxSts>RJCT</TxSts><StsRsnInf><Rsn><Cd>AM04</Cd></Rsn><AddtlInf>Insufficient funds</AddtlInf></StsRsnInf></TxInfAndSts></FIToFIPmtStsRpt></Document>') WHERE msg_id IS NOT NULL"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -103,6 +100,6 @@ pub fn table() -> ReadTable {
         doc_md: "Read pacs.002 payment-status reports into rows (one per TxInfAndSts).",
         keywords: "pacs.002, pacs002, FIToFIPmtStsRpt, payment status, ACSC, RJCT, reason code, \
                    acknowledgement, rejection, iso 20022",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }

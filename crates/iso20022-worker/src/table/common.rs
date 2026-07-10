@@ -18,7 +18,10 @@ pub struct ReadTable {
     pub doc_llm: &'static str,
     pub doc_md: &'static str,
     pub keywords: &'static str,
-    pub result_columns_md: &'static str,
+    /// A self-contained `vgi.executable_examples` JSON array (must-run). Each
+    /// reader is demonstrated on inline message text so the example returns rows
+    /// without a data file present (VGI511/VGI906).
+    pub executable_examples: &'static str,
 }
 
 impl TableFunction for ReadTable {
@@ -30,19 +33,27 @@ impl TableFunction for ReadTable {
         // doc_md is a richer Markdown section than the one-line `description`, so
         // it adds narrative an agent can't get from the description alone (VGI102).
         let doc_md = format!(
-            "# {}\n\n{}\n\nAll reads are local on the worker host — no network, no egress; \
-             payment data never leaves the machine. See the result columns for the full schema.",
+            "# {}\n\n{}\n\nThe argument may be the **message text supplied inline** (handy for a \
+             single message or an example), a file path, or a glob that scans many files. All \
+             reads are local on the worker host — no network, no egress; payment data never leaves \
+             the machine. See the result columns for the full schema.",
             self.title, self.doc_llm
         );
         let mut tags = crate::meta::object_tags(self.title, self.doc_llm, &doc_md, self.keywords);
         tags.push(("vgi.category".into(), "Message readers".into()));
+        // The result schema is static (same columns regardless of argument) and is
+        // generated straight from the Arrow schema, so the declared shape can never
+        // drift from what the batch actually carries (VGI307/321/322/323/910).
         tags.push((
-            "vgi.result_columns_md".into(),
-            self.result_columns_md.into(),
+            "vgi.result_columns_schema".into(),
+            crate::meta::result_columns_schema_json(&(self.schema)()),
         ));
-        // No `vgi.example_queries` / `vgi.executable_examples`: every `*_read`
-        // scans external files, so any example returns zero rows without the data
-        // present (VGI902). Usage lives in doc_md + result_columns_md.
+        // Demonstrated on inline message text (a reader also accepts inline content,
+        // not just a file path), so the example returns rows at lint time (VGI511).
+        tags.push((
+            "vgi.executable_examples".into(),
+            self.executable_examples.into(),
+        ));
         FunctionMetadata {
             description: self.doc_md.to_string(),
             tags,
@@ -52,12 +63,13 @@ impl TableFunction for ReadTable {
 
     fn argument_specs(&self) -> Vec<ArgSpec> {
         vec![ArgSpec::const_arg(
-            "path",
+            "source",
             0,
             "any",
-            "Path(s) to the message file(s) to read on the worker host. A single file path, or \
-             a glob such as '/data/statements/*.xml' to scan every matching file in sorted order \
-             (their rows are concatenated). All reads are local — no network, no egress.",
+            "The message source to read. Either the message text supplied inline (MX XML, or an \
+             MT `{…}` FIN message), or a path to a message file on the worker host, or a glob such \
+             as '/data/statements/*.xml' that scans every matching file in sorted order (their rows \
+             are concatenated). All reads are local — no network, no egress.",
         )]
     }
 

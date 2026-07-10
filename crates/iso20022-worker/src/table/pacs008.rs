@@ -9,11 +9,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str =
-    "One row per `CdtTrfTxInf` (group-header fields carried down). Key columns: \
-`msg_id`, `end_to_end_id`, `uetr`, `amount` DECIMAL(38,9) + `ccy`, debtor/creditor `*_name` / \
-`*_iban` / `*_agent_bic`, `charge_bearer`, `purpose_code`, `remittance_unstructured` VARCHAR[], \
-plus `raw` (whole document) and `path` provenance.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline pacs.008 FI-to-FI customer credit transfer: read the exact interbank settlement amount, UETR, and parties.","sql":"SELECT msg_id, uetr, ccy, instructed_amount, debtor_name, creditor_name FROM iso20022.main.pacs008_read('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>PACS-MSG-1</MsgId><CreDtTm>2026-01-01T10:00:00Z</CreDtTm><NbOfTxs>1</NbOfTxs><SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf></GrpHdr><CdtTrfTxInf><PmtId><InstrId>INSTR-1</InstrId><EndToEndId>E2E-REF-001</EndToEndId><UETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</UETR></PmtId><IntrBkSttlmAmt Ccy=\"EUR\">1234.56</IntrBkSttlmAmt><IntrBkSttlmDt>2026-01-01</IntrBkSttlmDt><ChrgBr>SHAR</ChrgBr><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><DbtrAgt><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></DbtrAgt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr><CdtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></CdtrAcct><CdtrAgt><FinInstnId><BICFI>BNPAFRPP</BICFI></FinInstnId></CdtrAgt><Purp><Cd>GDDS</Cd></Purp><RmtInf><Ustrd>INVOICE 998877</Ustrd></RmtInf></CdtTrfTxInf></FIToFICstmrCdtTrf></Document>') WHERE instructed_amount > 1000"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -163,7 +159,7 @@ pub fn table() -> ReadTable {
         doc_md: "Read pacs.008 customer credit transfers into rows (one per CdtTrfTxInf).",
         keywords: "pacs.008, pacs008, FIToFICstmrCdtTrf, credit transfer, payments, iso 20022, \
                    end to end id, uetr, iban, bic, settled amount, reconciliation, cbpr+",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }
 

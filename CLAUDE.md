@@ -65,9 +65,13 @@ cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
-# vgi-lint metadata gate (must be clean at --fail-on info):
-uvx --from vgi-lint-check@0.37.0 vgi-lint lint "$PWD/target/release/iso20022-worker" \
-    --fail-on info --no-check-links
+# vgi-lint metadata gate (must be clean at --fail-on info). Unpinned — always the
+# latest published vgi-lint-check, like CI's Query-farm/vgi-lint-check@v1 action.
+# Add --execute --ai --ai-concurrency 1 to also run the VGI9xx execution rules,
+# the VGI180 doc-quality judge, and the VGI920 agent-simulation (needs the local
+# `claude` CLI; slow):
+uvx --prerelease=allow --from vgi-lint-check vgi-lint lint \
+    "$PWD/target/release/iso20022-worker" --fail-on info --no-check-links
 # SQL E2E across transports (needs the community vgi extension + haybarn-unittest):
 make test-sql
 ```

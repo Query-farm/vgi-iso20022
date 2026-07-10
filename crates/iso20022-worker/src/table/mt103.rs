@@ -10,11 +10,7 @@ use super::common::ReadTable;
 use super::scan::finish;
 use crate::cols::*;
 
-const RESULT_MD: &str = "One row per MT103 message: `senders_ref`, `bank_op_code`, \
-`instruction_codes` VARCHAR[], `value_date`/`ccy`/`amount`, instructed amount + rate, ordering \
-customer (name/acct/bic), the correspondent + institution chain, beneficiary (name/acct/bic), \
-remittance info, charge details + `senders_charges` VARCHAR[], `sender_to_receiver_info`, the \
-derived `end_to_end_id`, `uetr`, plus `raw` and `path`.";
+const EXAMPLES: &str = r#"[{"description":"Parse an inline MT103 credit transfer and read its exact settled amount, currency, and parties.","sql":"SELECT senders_ref, value_date, ccy, amount, beneficiary FROM iso20022.main.mt103_read('{1:F01ACMEDEFFAXXX0000000000}{2:I103DEUTDEFFXXXXN}{3:{121:e3bf1c2a-1111-4aaa-8bbb-1234567890ab}}{4:\n:20:TXN-REF-1\n:23B:CRED\n:32A:260101EUR1234,56\n:50K:/DE89370400440532013000\nACME CORP\n:59:/FR1420041010050500013M02606\nWIDGETS SARL\n:70:INVOICE 998877\n:71A:SHA\n:72:/EToE/E2E-REF-001\n-}') WHERE amount > 1000"}]"#;
 
 /// The fixed output schema (column order matches [`build`]).
 pub fn schema() -> SchemaRef {
@@ -151,7 +147,7 @@ pub fn table() -> ReadTable {
         doc_md: "Read SWIFT MT103 single customer credit transfers into rows (one per message).",
         keywords: "mt103, swift mt, credit transfer, ordering customer, beneficiary, 32A, 50K, 59, \
                    uetr, end to end id, payments, fin",
-        result_columns_md: RESULT_MD,
+        executable_examples: EXAMPLES,
     }
 }
 
