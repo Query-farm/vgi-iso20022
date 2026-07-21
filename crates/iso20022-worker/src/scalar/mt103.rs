@@ -31,7 +31,7 @@ impl ScalarFunction for Mt103Field {
              from a message's block 4. Repeatable tags (e.g. '71F') are joined with a newline. A \
              bare numeric prefix like '50' matches whichever option variant is present (50A/50F/50K). \
              Returns NULL when the tag is absent or the message is unparseable. Works on any MT \
-             type despite the name; the message argument is inline text, a file path, or BLOB bytes.",
+             type despite the name; the message argument is inline text, a file path, or `BLOB` bytes.",
             "Raw text of an MT field by tag: `iso20022_mt103_field(raw, '50K')`. Repeatable tags \
              are newline-joined; missing tag -> NULL.",
             "mt field, swift tag, 50K, 59, 71F, 32A, raw field, block 4, extract tag, ordering customer",
@@ -39,6 +39,10 @@ impl ScalarFunction for Mt103Field {
         tags.push((
             "vgi.executable_examples".into(),
             r#"[{"description":"Read the :50K: ordering customer.","sql":"SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\n:20:R\n:50K:/123\nACME CORP\n-}', '50K') AS ordering_customer"}]"#.into(),
+        ));
+        tags.push((
+            "vgi.example_queries".into(),
+            r#"[{"description":"Read the raw :59: beneficiary field from an inline MT103.","sql":"SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\n:20:R\n:59:/123\nBENE\n-}', '59');"}]"#.into(),
         ));
         tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {
@@ -114,16 +118,20 @@ impl ScalarFunction for Mt103Amount {
         let mut tags = crate::meta::object_tags(
             "MT103 Settled Amount",
             "Return the interbank settled amount of an MT103/MT202 message — the `:32A:` amount — \
-             as an exact DECIMAL(38,9) (comma decimal separator normalized, never a float). Returns \
+             as an exact `DECIMAL(38,9)` (comma decimal separator normalized, never a float). Returns \
              NULL when `:32A:` is absent or unparseable. The message argument is inline text, a \
-             file path, or BLOB bytes.",
-            "The exact `:32A:` settled amount of an MT message as DECIMAL(38,9): \
+             file path, or `BLOB` bytes.",
+            "The exact `:32A:` settled amount of an MT message as `DECIMAL(38,9)`: \
              `iso20022_mt103_amount(raw)`.",
             "mt amount, 32A, settled amount, decimal, exact money, mt103, interbank settlement",
         );
         tags.push((
             "vgi.executable_examples".into(),
             r#"[{"description":"Exact :32A: amount.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount"}]"#.into(),
+        ));
+        tags.push((
+            "vgi.example_queries".into(),
+            r#"[{"description":"Read the exact :32A: interbank settled amount of an inline MT103.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}');"}]"#.into(),
         ));
         tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {

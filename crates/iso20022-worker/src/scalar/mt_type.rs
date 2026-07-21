@@ -28,15 +28,19 @@ impl ScalarFunction for MtType {
             "Detect the SWIFT MT message type of a raw payment message and return its label \
              (e.g. 'MT103', 'MT202', 'MT940', 'MT942'), reading the block-2 application header. \
              Returns NULL when the input is an ISO 20022 MX (XML) message or is not a recognizable \
-             MT message. The message argument is a VARCHAR holding the message text inline, a \
-             VARCHAR path to a message file on the worker host, or the raw BLOB bytes.",
+             MT message. The message argument holds the message text inline, is a path to a message \
+             file on the worker host, or is the raw message `BLOB` bytes.",
             "Return the SWIFT MT type label of a message, e.g. `iso20022_mt_type(raw)` -> 'MT103'; \
-             NULL for MX/unknown input. Accepts inline text, a file path, or BLOB bytes.",
+             NULL for MX/unknown input. Accepts inline text, a file path, or `BLOB` bytes.",
             "mt type, swift mt, sniff, detect message type, mt103, mt202, mt940, mt942, message kind",
         );
         tags.push((
             "vgi.executable_examples".into(),
             r#"[{"description":"Sniff an inline MT103.","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01BANKBEBBAXXX0000000000}{2:I103DEUTDEFFXXXXN}{4:\n:20:R\n:32A:260101EUR1,00\n-}') AS mt"}]"#.into(),
+        ));
+        tags.push((
+            "vgi.example_queries".into(),
+            r#"[{"description":"Sniff the SWIFT MT type label of an inline FIN message (NULL for MX/unknown).","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103DEUTDEFFXXXXN}{4:\n:20:R\n-}');"}]"#.into(),
         ));
         tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {

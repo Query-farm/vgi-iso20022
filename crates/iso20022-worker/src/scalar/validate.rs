@@ -37,14 +37,15 @@ impl ScalarFunction for Validate {
     fn metadata(&self) -> FunctionMetadata {
         let mut tags = crate::meta::object_tags(
             "Validate a Payment Message",
-            "Validate a SWIFT MT or ISO 20022 MX payment message and return a STRUCT(ok BOOLEAN, \
-             errors VARCHAR[]). It auto-detects the family and message type, then runs structural \
-             checks (balanced MT blocks / well-formed MX, mandatory tags & elements present) plus \
-             selected CBPR+ SR2025 field rules: BIC format, IBAN mod-97 checksum, ISO 4217 currency \
-             and minor-unit consistency, charge-bearer code sets, and UETR UUID shape. `ok` is true \
-             iff `errors` is empty; each error is a stable 'CODE: text' string you can unnest or \
-             list_contains. This is structural + field-level validation, NOT full CBPR+/HVPS+ \
-             network validation. The message argument is inline text, a file path, or BLOB bytes.",
+            "Validate a SWIFT MT or ISO 20022 MX payment message and return a \
+             `STRUCT(ok BOOLEAN, errors VARCHAR[])`. It auto-detects the family and message type, \
+             then runs structural checks (balanced MT blocks / well-formed MX, mandatory tags & \
+             elements present) plus selected CBPR+ SR2025 field rules: BIC format, IBAN mod-97 \
+             checksum, ISO 4217 currency and minor-unit consistency, charge-bearer code sets, and \
+             UETR `UUID` shape. `ok` is true iff `errors` is empty; each error is a stable \
+             'CODE: text' string you can unnest or list_contains. This is structural + field-level \
+             validation, NOT full CBPR+/HVPS+ network validation. The message argument is inline \
+             text, a file path, or `BLOB` bytes.",
             "Validate an MT/MX message -> `STRUCT(ok BOOLEAN, errors VARCHAR[])` (structural + \
              IBAN/BIC/currency/charge-bearer/UETR field rules). `ok` is true iff `errors` is empty.",
             "validate, validation, iso 20022 validate, cbpr+, iban checksum, bic format, currency, \
@@ -53,6 +54,10 @@ impl ScalarFunction for Validate {
         tags.push((
             "vgi.executable_examples".into(),
             r#"[{"description":"Validate an inline MT103.","sql":"SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\n:20:R\n:23B:CRED\n:32A:260101EUR1,00\n:50K:/DE89370400440532013000\nACME\n:59:/FR1420041010050500013M02606\nWIDGETS\n:71A:SHA\n-}')).ok AS ok"}]"#.into(),
+        ));
+        tags.push((
+            "vgi.example_queries".into(),
+            r#"[{"description":"Validate an inline MT103 message and read the ok flag.","sql":"SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1,00\n-}')).ok;"}]"#.into(),
         ));
         tags.push(("vgi.category".into(), "Message inspection".into()));
         FunctionMetadata {

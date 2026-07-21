@@ -91,7 +91,7 @@ pub fn table() -> ReadTable {
         title: "Read camt.053 Statements",
         doc_llm: "Scan a glob of ISO 20022 camt.053 (BkToCstmrStmt) XML files into one row per \
                   statement: account IBAN, opening/closing/available balances (signed, exact \
-                  DECIMAL), statement period, entry count, and credit/debit summary sums. Use the \
+                  `DECIMAL`), statement period, entry count, and credit/debit summary sums. Use the \
                   raw column with camt053_entries(raw) to explode the individual Ntry lines for \
                   reconciliation.",
         doc_md: "Read camt.053 bank-to-customer statements into rows (one per Stmt).",

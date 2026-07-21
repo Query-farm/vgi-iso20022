@@ -15,12 +15,6 @@ ATTACH 'iso20022' AS pay (TYPE vgi, LOCATION '${VGI_ISO20022_WORKER}');
 statement ok
 SET search_path = 'pay.main';
 
-# Version is a non-empty semver string.
-query T
-SELECT iso20022_version() IS NOT NULL AND length(iso20022_version()) > 0;
-----
-true
-
 # Sniff a SWIFT MT103 type from inline text.
 query T
 SELECT iso20022_mt_type('{1:F01X}{2:I103DEUTDEFFXXXXN}{4:

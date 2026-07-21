@@ -100,10 +100,10 @@ pub fn mt940_lines() -> PerMessageTable {
                   a `raw` message column, or an inline statement. Every input column is passed \
                   through, repeated once per child line, so lines correlate back to their parent \
                   statement. Each output line carries `line_idx`, `value_date` and `entry_date` \
-                  (DATE), the `credit_debit` mark (C/D/RC/RD), positive `amount` DECIMAL(38,9), \
+                  (`DATE`), the `credit_debit` mark (C/D/RC/RD), positive `amount` `DECIMAL(38,9)`, \
                   `transaction_type_id` (e.g. NTRF/NMSC), `customer_ref`/`bank_ref`, the flattened \
-                  `narrative`, and `narrative_struct` MAP(VARCHAR, VARCHAR) for structured \
-                  `?NN`/`>NN` narratives. See the executable example for the exact call shape.",
+                  `narrative`, and `narrative_struct` `MAP(VARCHAR, VARCHAR)` for structured \
+                  `?NN`/`>NN` narratives.",
         doc_md: "Explode MT940 :61: statement lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt940, statement lines, 61, 86, narrative, credit debit, transaction type, \
                    reconciliation, passthrough, fin",
@@ -121,12 +121,11 @@ pub fn mt942_lines() -> PerMessageTable {
         doc_llm: "Explode the :61: lines of one or more MT942 interim (intra-day) reports — each \
                   :61: line joined to its following :86: narrative — into one row per line. \
                   Identical column shape to mt940_lines (`line_idx`, `value_date`/`entry_date`, \
-                  `credit_debit`, positive `amount` DECIMAL(38,9), `transaction_type_id`, \
-                  references, flattened `narrative`, and `narrative_struct` MAP), with every input \
+                  `credit_debit`, positive `amount` `DECIMAL(38,9)`, `transaction_type_id`, \
+                  references, flattened `narrative`, and `narrative_struct` `MAP`), with every input \
                   column passed through so lines correlate back to their parent report. Pass a \
                   relation whose `raw` column (or the column named by `msg :=`) holds each report: \
-                  for example the output of `mt942_read('…')`, or an inline report. See the \
-                  executable example for the exact call shape.",
+                  for example the output of `mt942_read('…')`, or an inline report.",
         doc_md: "Explode MT942 :61: report lines (one per line, joined to :86:; input columns passthrough).",
         keywords: "mt942, interim report, statement lines, 61, 86, narrative, intraday, \
                    reconciliation, passthrough, fin",

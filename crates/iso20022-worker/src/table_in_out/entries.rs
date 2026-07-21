@@ -148,8 +148,7 @@ pub fn camt053_entries() -> PerMessageTable {
                   one row per entry, with multi-TxDtls split by tx_idx and every input column passed \
                   through. Pass a relation whose `raw` column (or the column named by `msg`) holds \
                   each statement — typically the output of camt053_read — to get amount, \
-                  credit/debit, dates, references, counterparty, and remittance for reconciliation. \
-                  See the executable example for the exact call shape.",
+                  credit/debit, dates, references, counterparty, and remittance for reconciliation.",
         doc_md: "Explode camt.053 statement Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.053, entries, ntry, statement lines, reconciliation, credit debit, \
                    end to end id, counterparty, passthrough, iso 20022",
@@ -167,8 +166,7 @@ pub fn camt054_entries() -> PerMessageTable {
         doc_llm: "Explode the Ntry rows of camt.054 debit/credit notifications into one row per \
                   entry — identical column shape to camt053_entries, so reconciliation queries are \
                   portable. Pass a relation whose `raw` column (or the column named by `msg`) holds \
-                  each notification, typically the output of camt054_read. See the executable \
-                  example for the exact call shape.",
+                  each notification, typically the output of camt054_read.",
         doc_md: "Explode camt.054 notification Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
         keywords: "camt.054, entries, ntry, notification, debit credit advice, reconciliation, \
                    counterparty, passthrough, iso 20022",

@@ -12,7 +12,8 @@ pub mod scalar;
 pub mod table;
 pub mod table_in_out;
 
-/// Worker version string, surfaced by `iso20022_version()`.
+/// Worker build version string, published as the catalog `implementation_version`
+/// (read from `vgi_catalogs()` without spending a query).
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

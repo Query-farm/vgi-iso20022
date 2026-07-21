@@ -70,13 +70,16 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  **Data residency:** the worker makes zero outbound calls and parses every message \
                  locally — debtor/creditor names, IBANs, and amounts never leave the host.\n\n\
                  Reach for it whenever you have MT statements or transfers, or camt/pacs/pain XML, \
-                 on disk (or inline) and want them as rows: list the schema to discover the file \
-                 readers, statement exploders, and inspection scalars it provides. The parsers are \
-                 built on permissive open-source components and the open, freely published ISO 20022 \
-                 message standard (iso20022.org); see the \
-                 [source repository](https://github.com/Query-farm/vgi-iso20022) for the full \
-                 catalog and examples. Part of the [Query.Farm](https://query.farm) VGI ecosystem of \
-                 DuckDB workers."
+                 on disk (or inline) and want them as rows. It provides file-glob **readers** (one \
+                 row per message, transaction, or statement), per-message **exploders** that unnest \
+                 statement entries and lines, and **inspection scalars** that sniff the MT type, \
+                 read a field, return the exact settled amount, and validate a message. Money is \
+                 parsed as exact decimals so amount-equality joins hold, and dates use the SWIFT \
+                 century pivot plus ISO 8601. The parsers are built on permissive open-source \
+                 components and the open, freely published ISO 20022 message standard \
+                 (iso20022.org); the \
+                 [source repository](https://github.com/Query-farm/vgi-iso20022) carries the full \
+                 catalog and examples."
                     .to_string(),
             ),
             (
@@ -99,6 +102,10 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             ),
         ],
         source_url: Some("https://github.com/Query-farm/vgi-iso20022".to_string()),
+        // Publish the running build version as the catalog implementation_version
+        // (read from vgi_catalogs() without spending a query) instead of a
+        // parameterless iso20022_version() scalar (VGI328).
+        implementation_version: Some(iso20022_worker::version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
             comment: Some(
@@ -163,8 +170,8 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                        validate it against structural and CBPR+ rules, and report the worker \
                        version.\n\n\
                      Money is parsed with exact decimals so amount-equality joins hold, and dates \
-                     use the SWIFT century pivot plus ISO 8601. List the schema to discover the \
-                     concrete functions and their documented examples."
+                     use the SWIFT century pivot plus ISO 8601. Each function documents its result \
+                     columns and carries a runnable example."
                         .to_string(),
                 ),
                 // Offline-runnable inline examples (the file-glob `*_read`
@@ -172,10 +179,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 // function's doc_md rather than executed here — VGI902).
                 (
                     "vgi.example_queries".to_string(),
-                    "SELECT iso20022.main.iso20022_version();\n\
-                     SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}');\n\
-                     SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}');\n\
-                     SELECT (iso20022.main.iso20022_validate('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok;"
+                    r#"[{"description":"Sniff the SWIFT MT message type of an inline FIN message.","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}') AS mt"},{"description":"Read the exact :32A: interbank settled amount of an inline MT103 as a fixed-scale decimal.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount"},{"description":"Validate an inline pacs.008 message and read the ok flag.","sql":"SELECT (iso20022.main.iso20022_validate('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok AS ok"}]"#
                         .to_string(),
                 ),
             ],
@@ -214,19 +218,13 @@ const CAMT053: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.05
 const CAMT054: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-1</MsgId><CreDtTm>2026-01-03T06:30:00Z</CreDtTm></GrpHdr><Ntfctn><Id>NTF-1</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy></Acct><Ntry><Amt Ccy="EUR">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-DEBIT-9</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
 
 /// The catalog-level `vgi.agent_test_tasks` suite (VGI520 coverage / VGI920
-/// agent-simulation). Every registered object — the five scalars, the nine file
+/// agent-simulation). Every registered object — the four scalars, the nine file
 /// readers, the four statement exploders, and the `supported_messages` view — is
 /// exercised by at least one task. Deterministic answers (counts, booleans,
 /// single fields) keep result-compare grading stable; `reference_sql` is the
 /// grader-only canonical solution and never shown to the analyst.
 fn agent_tasks() -> Vec<AgentTask> {
     vec![
-        AgentTask::exact(
-            "worker_version",
-            "What version string does the iso20022 worker report? Return one row with one column \
-             named version.",
-            "SELECT iso20022.main.iso20022_version() AS version",
-        ),
         AgentTask::exact(
             "sniff_mt_type",
             format!(
