@@ -5,8 +5,9 @@
 //! element name with any `ns:` prefix stripped) and the `Ccy` attribute. Parsing
 //! is total: malformed XML yields `None`, never a panic.
 
+use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::Event;
-use quick_xml::Reader;
+use quick_xml::{Reader, XmlVersion};
 
 /// One XML element: its local name, attributes, immediate text, and children.
 #[derive(Debug, Clone, Default)]
@@ -23,9 +24,19 @@ pub fn parse(xml: &str) -> Option<Node> {
     let mut reader = Reader::from_str(xml);
     let mut stack: Vec<Node> = Vec::new();
     let mut root: Option<Node> = None;
+    // quick-xml (>= 0.38) splits character data around entity references
+    // (`A &amp; B` arrives as Text, GeneralRef, Text), so a contiguous text run
+    // is accumulated here and flushed -- trimmed, as one unit -- at the next
+    // markup event. `None` marks a run holding an unknown entity, which is
+    // dropped like the whole-text unescape failure it replaces.
+    let mut run: Option<String> = Some(String::new());
 
     loop {
-        match reader.read_event() {
+        let event = reader.read_event();
+        if !matches!(event, Ok(Event::Text(_)) | Ok(Event::GeneralRef(_))) {
+            flush_text(&mut stack, &mut run);
+        }
+        match event {
             Ok(Event::Start(e)) => {
                 stack.push(Node {
                     name: local_name(e.name().as_ref()),
@@ -47,17 +58,24 @@ pub fn parse(xml: &str) -> Option<Node> {
                 }
             }
             Ok(Event::Text(t)) => {
-                if let Some(top) = stack.last_mut() {
-                    if let Ok(s) = t.unescape() {
-                        top.text.push_str(s.trim());
-                    }
+                if let Some(buf) = run.as_mut() {
+                    buf.push_str(&t.xml10_content());
+                }
+            }
+            Ok(Event::GeneralRef(r)) => {
+                let resolved = match r.resolve_char_ref() {
+                    Ok(Some(c)) => Some(c.to_string()),
+                    Ok(None) => resolve_predefined_entity(&r).map(str::to_string),
+                    Err(_) => None,
+                };
+                match (run.as_mut(), resolved) {
+                    (Some(buf), Some(s)) => buf.push_str(&s),
+                    _ => run = None,
                 }
             }
             Ok(Event::CData(t)) => {
                 if let Some(top) = stack.last_mut() {
-                    if let Ok(s) = std::str::from_utf8(t.as_ref()) {
-                        top.text.push_str(s.trim());
-                    }
+                    top.text.push_str(t.xml10_content().trim());
                 }
             }
             Ok(Event::Eof) => break,
@@ -66,6 +84,14 @@ pub fn parse(xml: &str) -> Option<Node> {
         }
     }
     root
+}
+
+/// Append the pending text run (trimmed) to the open element, then reset it.
+fn flush_text(stack: &mut [Node], run: &mut Option<String>) {
+    if let (Some(top), Some(buf)) = (stack.last_mut(), run.as_ref()) {
+        top.text.push_str(buf.trim());
+    }
+    *run = Some(String::new());
 }
 
 /// Attach a finished node to its parent, or record it as the root.
@@ -77,9 +103,8 @@ fn attach(stack: &mut [Node], root: &mut Option<Node>, node: Node) {
     }
 }
 
-fn local_name(qname: &[u8]) -> String {
-    let s = String::from_utf8_lossy(qname);
-    s.rsplit(':').next().unwrap_or(&s).to_string()
+fn local_name(qname: &str) -> String {
+    qname.rsplit(':').next().unwrap_or(qname).to_string()
 }
 
 fn attrs(e: &quick_xml::events::BytesStart) -> Vec<(String, String)> {
@@ -87,7 +112,7 @@ fn attrs(e: &quick_xml::events::BytesStart) -> Vec<(String, String)> {
     for a in e.attributes().flatten() {
         let key = local_name(a.key.as_ref());
         let val = a
-            .unescape_value()
+            .normalized_value(XmlVersion::Implicit1_0)
             .map(|c| c.into_owned())
             .unwrap_or_default();
         out.push((key, val));
@@ -182,6 +207,14 @@ mod tests {
         let amt = tx.child("IntrBkSttlmAmt").unwrap();
         assert_eq!(amt.text_opt().as_deref(), Some("1234.56"));
         assert_eq!(amt.attr("Ccy"), Some("EUR"));
+    }
+
+    #[test]
+    fn resolves_entity_references_in_text_and_attributes() {
+        let xml = "<Doc><Nm> Smith &amp; Sons &#x41;G </Nm><Amt Ccy=\"&#69;UR\">1</Amt></Doc>";
+        let root = parse(xml).unwrap();
+        assert_eq!(root.text_at(&["Nm"]).as_deref(), Some("Smith & Sons AG"));
+        assert_eq!(root.child("Amt").unwrap().attr("Ccy"), Some("EUR"));
     }
 
     #[test]

@@ -154,44 +154,22 @@ pub fn object_tags(
 }
 
 /// One analyst task for the catalog-level `vgi.agent_test_tasks` suite that
-/// `vgi-lint simulate` (VGI520 coverage / VGI920 agent-sim) runs. Only `prompt`
-/// is ever shown to the analyst; `reference_sql` / `check_sql` /
-/// `success_criteria` are grader-only.
+/// `vgi-lint simulate` (VGI520 coverage / VGI920 agent-sim) runs. Only the
+/// public half (`name` + `prompt`) is published in the catalog tag; the grader
+/// fields (`reference_sql`, ...) live in `vgi-agent-tests.yaml` at the repo
+/// root, keyed by task name, so the agent being graded never sees them (VGI416).
 pub struct AgentTask {
     pub name: String,
     pub prompt: String,
-    /// Canonical solution used for deterministic result-compare grading and for
-    /// coverage (every object named here counts as tested — VGI520).
-    pub reference_sql: String,
-    /// Optional post-session assertion (grader-only) for non-deterministic tasks.
-    pub check_sql: Option<String>,
-    /// Optional judge rubric (grader-only).
-    pub success_criteria: Option<String>,
-    /// Relax strict row-order comparison for this task.
-    pub unordered: bool,
 }
 
 impl AgentTask {
-    /// A minimal exact-compare task (name, prompt, reference_sql).
-    pub fn exact(
-        name: impl Into<String>,
-        prompt: impl Into<String>,
-        reference_sql: impl Into<String>,
-    ) -> Self {
+    /// A task as published in the catalog (its grader lives in the sidecar).
+    pub fn new(name: impl Into<String>, prompt: impl Into<String>) -> Self {
         AgentTask {
             name: name.into(),
             prompt: prompt.into(),
-            reference_sql: reference_sql.into(),
-            check_sql: None,
-            success_criteria: None,
-            unordered: false,
         }
-    }
-
-    /// Relax strict row-order comparison for this task.
-    pub fn unordered(mut self) -> Self {
-        self.unordered = true;
-        self
     }
 }
 
@@ -200,23 +178,11 @@ pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
     let items: Vec<String> = tasks
         .iter()
         .map(|t| {
-            let mut obj = format!(
-                "{{\"name\":\"{}\",\"prompt\":\"{}\",\"reference_sql\":\"{}\"",
+            format!(
+                "{{\"name\":\"{}\",\"prompt\":\"{}\"}}",
                 json_esc(&t.name),
-                json_esc(&t.prompt),
-                json_esc(&t.reference_sql)
-            );
-            if let Some(c) = &t.check_sql {
-                obj.push_str(&format!(",\"check_sql\":\"{}\"", json_esc(c)));
-            }
-            if let Some(s) = &t.success_criteria {
-                obj.push_str(&format!(",\"success_criteria\":\"{}\"", json_esc(s)));
-            }
-            if t.unordered {
-                obj.push_str(",\"unordered\":true");
-            }
-            obj.push('}');
-            obj
+                json_esc(&t.prompt)
+            )
         })
         .collect();
     format!("[{}]", items.join(","))

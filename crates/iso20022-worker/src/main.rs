@@ -108,6 +108,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         implementation_version: Some(iso20022_worker::version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
+            path: Vec::new(),
             comment: Some(
                 "SWIFT MT and ISO 20022 MX payment-message parsing functions.".to_string(),
             ),
@@ -221,136 +222,109 @@ const CAMT054: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.05
 /// agent-simulation). Every registered object — the four scalars, the nine file
 /// readers, the four statement exploders, and the `supported_messages` view — is
 /// exercised by at least one task. Deterministic answers (counts, booleans,
-/// single fields) keep result-compare grading stable; `reference_sql` is the
-/// grader-only canonical solution and never shown to the analyst.
+/// single fields) keep result-compare grading stable; each task's grader-only
+/// `reference_sql` lives in `vgi-agent-tests.yaml` (VGI416), never in the tag.
 fn agent_tasks() -> Vec<AgentTask> {
     vec![
-        AgentTask::exact(
+        AgentTask::new(
             "sniff_mt_type",
             format!(
                 "A payment arrived as this inline SWIFT FIN message:\n{VALID_MT103}\nWhich SWIFT MT \
                  message type is it? Return one column named mt."
             ),
-            format!("SELECT iso20022.main.iso20022_mt_type('{VALID_MT103}') AS mt"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt103_amount_threshold",
             format!(
                 "Does this inline MT103 settle for more than 1000.00 in its :32A: amount field? \
                  Message:\n{MT103}\nReturn one boolean column named over_1000."
             ),
-            format!("SELECT iso20022.main.iso20022_mt103_amount('{MT103}') > 1000 AS over_1000"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt103_charge_bearer",
             format!(
                 "Read the charge-bearer code carried in field :71A: of this inline MT103. \
                  Message:\n{MT103}\nReturn one column named charges."
             ),
-            format!("SELECT trim(iso20022.main.iso20022_mt103_field('{MT103}', '71A')) AS charges"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "validate_ok",
             format!(
                 "Is this inline SWIFT message structurally valid? Message:\n{VALID_MT103}\nReturn \
                  one boolean column named ok."
             ),
-            format!("SELECT (iso20022.main.iso20022_validate('{VALID_MT103}')).ok AS ok"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt103_read_currency",
             format!(
                 "Parse this inline MT103 message and report the currency it settles in (the \
                  worker's message readers accept inline text). Message:\n{MT103}\nReturn one \
                  column named ccy."
             ),
-            format!("SELECT ccy FROM iso20022.main.mt103_read('{MT103}')"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt202_amount_check",
             format!(
                 "Parse this inline MT202 cover message and decide whether its settled amount \
                  exceeds 1000000 (the readers accept inline text). Message:\n{MT202}\nReturn one \
                  boolean column named big."
             ),
-            format!("SELECT amount > 1000000 AS big FROM iso20022.main.mt202_read('{MT202}')"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt940_line_count",
             format!(
                 "How many statement lines does this inline MT940 end-of-day statement contain \
                  (each :61: line is one row)? The readers accept inline text. Message:\n{MT940}\n\
                  Return one column named n."
             ),
-            format!(
-                "SELECT count(*) AS n FROM iso20022.main.mt940_lines((SELECT raw FROM \
-                 iso20022.main.mt940_read('{MT940}')))"
-            ),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "mt942_line_count",
             format!(
                 "How many transaction lines does this inline MT942 interim report contain? The \
                  readers accept inline text. Message:\n{MT942}\nReturn one column named n."
             ),
-            format!(
-                "SELECT count(*) AS n FROM iso20022.main.mt942_lines((SELECT raw FROM \
-                 iso20022.main.mt942_read('{MT942}')))"
-            ),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "pacs008_uetr",
             format!(
                 "Parse this inline pacs.008 credit transfer and return its UETR (the readers accept \
                  inline XML text). Message:\n{PACS008}\nReturn one column named uetr."
             ),
-            format!("SELECT uetr FROM iso20022.main.pacs008_read('{PACS008}')"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "pacs002_orig_uetr",
             format!(
                 "This inline pacs.002 status report references an original payment. Return that \
                  original UETR. Message:\n{PACS002}\nReturn one column named orig_uetr."
             ),
-            format!("SELECT orig_uetr FROM iso20022.main.pacs002_read('{PACS002}')"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "pain001_currency",
             format!(
                 "What currency is this inline pain.001 credit-transfer initiation in? Message:\n\
                  {PAIN001}\nReturn one column named ccy."
             ),
-            format!("SELECT ccy FROM iso20022.main.pain001_read('{PAIN001}')"),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "camt053_booked_entries",
             format!(
                 "How many booked (status BOOK) entries does this inline camt.053 statement \
                  contain? Explode its entries. Message:\n{CAMT053}\nReturn one column named n."
             ),
-            format!(
-                "SELECT count(*) AS n FROM iso20022.main.camt053_entries((SELECT raw FROM \
-                 iso20022.main.camt053_read('{CAMT053}'))) WHERE status = 'BOOK'"
-            ),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "camt054_debit_entries",
             format!(
                 "How many debit (DBIT) entries does this inline camt.054 notification contain? \
                  Explode its entries. Message:\n{CAMT054}\nReturn one column named n."
             ),
-            format!(
-                "SELECT count(*) AS n FROM iso20022.main.camt054_entries((SELECT raw FROM \
-                 iso20022.main.camt054_read('{CAMT054}'))) WHERE credit_debit = 'DBIT'"
-            ),
         ),
-        AgentTask::exact(
+        AgentTask::new(
             "supported_messages_with_exploder",
             "Which message types does the iso20022 worker expose a dedicated statement or \
              notification exploder function for? List each message_type, sorted ascending. Return \
              one column named message_type.",
-            "SELECT message_type FROM iso20022.main.supported_messages WHERE exploder_function IS \
-             NOT NULL ORDER BY message_type",
         ),
     ]
 }

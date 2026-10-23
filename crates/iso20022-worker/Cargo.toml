@@ -21,7 +21,7 @@ vgi-rpc.workspace = true
 arrow-array.workspace = true
 arrow-buffer.workspace = true
 arrow-schema.workspace = true
-arrow-select = "59"
+arrow-select = "60"
 iso20022-core.workspace = true
 rust_decimal = { version = "1", default-features = false, features = ["std"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
