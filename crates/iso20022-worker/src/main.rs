@@ -404,6 +404,7 @@ fn supported_messages_view() -> CatView {
                 "A one-line description of the message type.".into(),
             ),
         ],
+        ..Default::default()
     }
 }
 

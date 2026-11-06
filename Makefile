@@ -10,7 +10,8 @@
 #   make vgi-lint     # metadata-quality gate (needs uv: `uv tool install` not required)
 #
 # The SQL E2E suite drives the compiled worker through DuckDB via
-# `haybarn-unittest` (install with: `uv tool install haybarn-unittest`).
+# `haybarn-unittest` (install with: `uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'`;
+# haybarn 2.0 is required: the worker speaks VGI protocol vgi.v3 / 3.1).
 
 WORKER         ?= $(CURDIR)/target/release/iso20022-worker
 SQL_RUNNER     ?= haybarn-unittest
@@ -48,8 +49,8 @@ build:
 doc:
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 
-# Metadata-quality gate (matches CI's Query-farm/vgi-lint-check@v1 at fail-on=info).
-# Unpinned: always resolve the latest published vgi-lint-check, like CI's @v1 action.
+# Metadata-quality gate (matches CI's Query-farm/vgi-lint-check@v2 at fail-on=info).
+# Unpinned: always resolve the latest published vgi-lint-check, like CI's @v2 action.
 vgi-lint: build
 	uvx --prerelease=allow --from vgi-lint-check vgi-lint lint "$(WORKER)" --fail-on info --no-check-links
 

@@ -66,7 +66,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 # vgi-lint metadata gate (must be clean at --fail-on info). Unpinned — always the
-# latest published vgi-lint-check, like CI's Query-farm/vgi-lint-check@v1 action.
+# latest published vgi-lint-check, like CI's Query-farm/vgi-lint-check@v2 action.
 # Add --execute --ai --ai-concurrency 1 to also run the VGI9xx execution rules,
 # the VGI180 doc-quality judge, and the VGI920 agent-simulation (needs the local
 # `claude` CLI; slow):
@@ -78,7 +78,7 @@ make test-sql
 
 CI (`.github/workflows/ci.yml`) runs fmt/clippy/build/doc/tests, the SQL E2E
 matrix (subprocess/http/unix × ubuntu/macos via `haybarn-unittest` + the signed
-community `vgi` extension), and `Query-farm/vgi-lint-check@v1` at `fail-on=info`.
+community `vgi` extension), and `Query-farm/vgi-lint-check@v2` at `fail-on=info`.
 Releases go through `Query-farm/vgi-actions/.github/workflows/rust-release.yml@v1`.
 
 ## Conventions
