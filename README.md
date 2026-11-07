@@ -16,48 +16,79 @@ IBANs, amounts are PII).
   live in `main`; the catalog name is what you choose in `ATTACH`).
 - **License:** MIT.
 
-## Install & attach
+## Quick start
+
+Every [GitHub release](https://github.com/Query-farm/vgi-iso20022/releases) ships a prebuilt worker binary. The `vgi` extension downloads the one for your platform, checks its SHA-256 and caches it, so there is nothing to install besides DuckDB:
 
 ```sql
 INSTALL vgi FROM community;
 LOAD vgi;
 
--- the worker is a local binary; no secret needed (pure parser, no auth)
-ATTACH 'iso20022' AS pay (TYPE vgi, COMMAND 'iso20022-worker');
+ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-iso20022@v0.2.0');
+
+-- Sniff the SWIFT MT message type of an inline FIN message.
+SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:
+:20:R
+-}') AS mt;
+
+-- Read the exact :32A: interbank settled amount of an inline MT103 as a fixed-scale
+-- decimal.
+SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:
+:20:R
+:32A:260101EUR1234,56
+-}') AS amount;
 ```
+
+No secret or API key is needed: the worker is a pure local parser with no auth and no network access. The examples below use the catalog name `iso20022`; if you attach under another name, change the `iso20022.main.` prefix to match.
+
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64). `github-auto://` needs an explicit release tag; change `@v0.2.0` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker; needs a container runtime):
+
+  ```sql
+  ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-iso20022:0.2.0');
+  ```
+
+- **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-iso20022/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
+
+### Build from source
+
+To build the worker yourself, see [Build & test](#build--test).
 
 ## SQL surface
 
 ```sql
 -- 1) Parse a directory of camt.053 statements -> one row per statement
 SELECT msg_id, account_iban, opening_balance, closing_balance, ccy, entry_count
-FROM pay.main.camt053_read('/data/statements/*.xml');
+FROM iso20022.main.camt053_read('/data/statements/*.xml');
 
 -- 2) Explode camt.053 entries (child rows) for reconciliation. The per-message
 --    exploders take the relation to explode as a subquery; every input column is
 --    passed through (repeated per entry) so the account correlates back.
 SELECT account_iban, amount, ccy, credit_debit, value_date, end_to_end_id
-FROM pay.main.camt053_entries(
-       (SELECT account_iban, raw FROM pay.main.camt053_read('/data/statements/2026-06-*.xml')))
+FROM iso20022.main.camt053_entries(
+       (SELECT account_iban, raw FROM iso20022.main.camt053_read('/data/statements/2026-06-*.xml')))
 WHERE credit_debit = 'CRDT';
 
 -- 3) Parse SWIFT MT103 blobs straight from a column (scalar)
-SELECT iso20022_mt_type(content)                    AS mt,
-       iso20022_mt103_field(content, '50K')         AS ordering_customer,
-       iso20022_mt103_field(content, '59')          AS beneficiary,
-       iso20022_mt103_amount(content)               AS settled_amount
+SELECT iso20022.main.iso20022_mt_type(content)            AS mt,
+       iso20022.main.iso20022_mt103_field(content, '50K') AS ordering_customer,
+       iso20022.main.iso20022_mt103_field(content, '59')  AS beneficiary,
+       iso20022.main.iso20022_mt103_amount(content)       AS settled_amount
 FROM read_text('/inbox/mt103/*.txt');
 
 -- 4) MT103 <-> pacs.008 dual-running equivalence check (migration QA)
 SELECT m.end_to_end_id, m.amount AS mt_amount, p.amount AS mx_amount
-FROM pay.main.mt103_read('/dual/mt/*.txt') m
-JOIN pay.main.pacs008_read('/dual/mx/*.xml') p USING (end_to_end_id)
+FROM iso20022.main.mt103_read('/dual/mt/*.txt') m
+JOIN iso20022.main.pacs008_read('/dual/mx/*.xml') p USING (end_to_end_id)
 WHERE m.amount <> p.amount;
 
 -- 5) Structural + CBPR+ field validation, surfaced inline
 SELECT path,
-       (iso20022_validate(content)).ok,
-       (iso20022_validate(content)).errors
+       (iso20022.main.iso20022_validate(content)).ok,
+       (iso20022.main.iso20022_validate(content)).errors
 FROM read_text('/inbox/**/*.xml');
 ```
 
@@ -102,8 +133,8 @@ child row:
 
 ```sql
 SELECT account, value_date, credit_debit, amount, narrative
-FROM pay.main.mt940_lines(
-       (SELECT account, raw FROM pay.main.mt940_read('/data/*.txt')));
+FROM iso20022.main.mt940_lines(
+       (SELECT account, raw FROM iso20022.main.mt940_read('/data/*.txt')));
 ```
 
 ## Validation scope (honest framing)
