@@ -11,7 +11,7 @@ per statement-line / transaction.
 the host** — a selling point for regulated payment data (debtor/creditor names,
 IBANs, amounts are PII).
 
-- **Language / SDK:** Rust, [`vgi`](https://crates.io/crates/vgi) 0.49.2 (arrow 59; VGI protocol vgi.v3 / 3.1, requires haybarn 2.0).
+- **Language / SDK:** Rust, [`vgi`](https://crates.io/crates/vgi) 0.50.0 (arrow 59; VGI protocol vgi.v3 / 3.2, requires haybarn 2.0).
 - **Catalog:** `iso20022`, **schema:** `main` (registered VGI functions always
   live in `main`; the catalog name is what you choose in `ATTACH`).
 - **License:** MIT.
