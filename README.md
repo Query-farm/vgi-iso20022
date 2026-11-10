@@ -24,7 +24,7 @@ Every [GitHub release](https://github.com/Query-farm/vgi-iso20022/releases) ship
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-iso20022@v0.2.0');
+ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-iso20022@v0.3.0');
 
 -- Sniff the SWIFT MT message type of an inline FIN message.
 SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:
@@ -41,14 +41,14 @@ SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:
 
 No secret or API key is needed: the worker is a pure local parser with no auth and no network access. The examples below use the catalog name `iso20022`; if you attach under another name, change the `iso20022.main.` prefix to match.
 
-Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64). `github-auto://` needs an explicit release tag; change `@v0.2.0` to move to a newer release.
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64). `github-auto://` needs an explicit release tag; change `@v0.3.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker; needs a container runtime):
 
   ```sql
-  ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-iso20022:0.2.0');
+  ATTACH 'iso20022' AS iso20022 (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-iso20022:0.3.0');
   ```
 
 - **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-iso20022/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
