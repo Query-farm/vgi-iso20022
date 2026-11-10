@@ -35,7 +35,13 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 .to_string(),
         ),
         tags: vec![
-            ("vgi.title".to_string(), "ISO 20022 & SWIFT MT Payment Parsing".to_string()),
+            ("vgi.title".to_string(), "ISO 20022 Payments".to_string()),
+            (
+                "vgi.subtitle".to_string(),
+                "Parse SWIFT MT and ISO 20022 MX payment messages into typed SQL rows, \
+                 locally with no network calls."
+                    .to_string(),
+            ),
             (
                 "vgi.keywords".to_string(),
                 keywords_json(
@@ -113,7 +119,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 "SWIFT MT and ISO 20022 MX payment-message parsing functions.".to_string(),
             ),
             tags: vec![
-                ("vgi.title".to_string(), "iso20022 — parsing functions".to_string()),
+                ("vgi.title".to_string(), "Payment parsers".to_string()),
                 // Ordered navigation registry (VGI413). Each object carries a
                 // matching `vgi.category` tag naming exactly one of these.
                 (
