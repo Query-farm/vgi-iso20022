@@ -187,4 +187,4 @@ Query Farm LLC.
 
 ## Notebooks
 
-[Executed statement reconciliation walkthrough](notebooks/README.md).
+[Executed statement reconciliation and MT/MX comparison walkthroughs](notebooks/README.md).

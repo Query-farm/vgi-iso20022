@@ -1,45 +1,105 @@
-# ISO 20022 notebooks
+# ISO 20022 Payments examples
 
-[01 · Reconcile statement entries, not repeated transaction details](01_reconcile_entries_not_details.ipynb) shows why a camt.053 entry's amount must be counted once even when its transaction details expand to several rows. Exact decimal reconciliation then exposes the effect of filtering small entries.
+[Worker repository](https://github.com/Query-farm/vgi-iso20022) · [Shared notebook tools and standard](https://github.com/Query-farm/vgi-example-notebooks)
 
-## Run
+| Notebook | Investigation | Run |
+|---|---|---|
+| [Reconcile statement entries, not repeated details](01_reconcile_entries_not_details.ipynb) | Recover entry grain, retain exact decimal signs, and explain why a filtered subset changes the balance comparison. | [Open in Colab](https://colab.research.google.com/github/Query-farm/vgi-iso20022/blob/main/notebooks/01_reconcile_entries_not_details.ipynb) |
+| [Compare message representations before status](02_compare_messages_before_status.ipynb) | Inspect MT fields, validate a negative control, preserve both sides of MT103/pacs.008 matching, and join independent pacs.002 observations. | [Open in Colab](https://colab.research.google.com/github/Query-farm/vgi-iso20022/blob/main/notebooks/02_compare_messages_before_status.ipynb) |
 
-Install [uv](https://docs.astral.sh/uv/). Python 3.13–3.14 is required; uv can install it. Initial package, extension and worker-release downloads need internet. The worker itself parses local data without network access. No local worker build, account or credentials are needed.
+Both notebooks have saved results, visible SQL connections, linked worker titles,
+Colab buttons and the shared Query Farm Strata Sun/VGI branding. Three SVG figures
+stay sharp on GitHub. GitHub displays code expanded; shared setup and small
+presentation helpers keep it concise. Editor hiding metadata is only a convenience.
+
+## Run locally or in Colab
+
+Open either Colab link and run all cells. Locally, run from this directory:
 
 ```sh
-cd notebooks
 uv sync --locked
-uv run --locked python execute.py --timeout 300
+uv run --locked vgi-notebooks --timeout 300
 ```
 
-The visible literal connection is `github-auto://Query-farm/vgi-iso20022@v0.4.0`, tested through Haybarn 2.0.0rc11. The release tag resolves to `842cfbf351731f42a46488e56d0569cff4e73a3c`; the extension selects a platform artifact, checks its SHA-256 sidecar and caches it. The release provides macOS arm64 and Linux x86-64/arm64. Upgrade the pin deliberately and rerun both populations.
+Select `.venv/bin/python` for an interactive kernel. Standalone setup installs the
+shared base package, preserving compatible preinstalled kernel/plot packages.
+The local environment adds the execution runner. Authored fixtures and the small
+plot helper are fetched from an immutable public revision and SHA-256 verified;
+no worker checkout, copied standard or local execution script is required.
 
-Optional editor kernel:
+The connection remains visible in each notebook:
+
+```sql
+ATTACH 'iso20022' (TYPE vgi,
+ LOCATION 'github-auto://Query-farm/vgi-iso20022@v0.4.0');
+```
+
+The VGI extension downloads the platform's public prebuilt release, checks its
+SHA-256 and caches it. Setup needs internet access; subsequent message parsing is
+local, with no API credentials, account access or payment submission. The release
+supports macOS arm64 and Linux amd64/arm64. No source build or SDK overrides occur.
+
+## Message scope and provenance
+
+All payment messages are synthetic teaching data. The original statement fixtures
+have a SHA-256 manifest and an explicit 02 January 2026 period. The migration
+fixtures adapt the repository's MIT-licensed golden examples into six authored
+identities: three comparable EUR pairs, one currency disagreement, one MT-only
+payment and one MX-only payment. They include three independent status reports.
+The migration manifest and copied worker license travel with the fixtures.
+
+The first notebook verifies **one statement per file**. Release v0.4.0 predates a
+fix that narrows the raw XML for each statement in a multi-statement document;
+using those documents with this release could duplicate child rows. Current
+source fixes that behavior, but these notebooks deliberately demonstrate the
+public release within its verified single-statement scope.
+
+Amounts remain `DECIMAL(38,9)` in SQL and are displayed as strings where exactness
+matters. Floating point is used only for chart positioning. Currencies are never
+summed together. Repeated statement-detail amounts are recovered by entry identity,
+not by deduplicating equal numbers or inventing allocations. Pending entries remain
+visible outside the booked-balance identity; reversal flags do not flip the sign twice.
+
+Migration joins require a nonempty unique UETR on each side. Missing counterparts
+and currency disagreements remain visible with unavailable deltas. Per-message
+validation checks selected structural/field rules, not full XSD/network acceptance.
+The changed charge-code control never enters payment comparisons. A matching amount
+is not complete semantic equivalence, and a status observation is not independently
+verified settlement. Multiple historical status observations would require an explicit
+time-selection policy beyond this fixture's one-report-per-UETR constraint.
+
+## Run the experiments separately
+
+Omit small statement entries while keeping the source statements unchanged:
 
 ```sh
-uv run --locked python -m ipykernel install --user --name vgi-iso20022-notebooks --display-name "Python (vgi-iso20022 notebooks)"
+uv run --locked vgi-notebooks 01_reconcile_entries_not_details.ipynb \
+  --parameters '{"MIN_ENTRY_AMOUNT":"100.00"}' --output-dir artifacts/minimum-100
 ```
 
-Use this directory as the working directory and Restart Kernel → Run All. The runner creates a temporary kernel and preserves the last successful saved notebook if any cell fails.
+The full reconciliation and repeated-detail comparison stay fixed. Selected counts
+and filtered residuals change; omitted signed movement explains the residual.
+The accepted decimal-string range is 0.00–1000.00. Restore `"0.00"` for the default.
 
-## Experiment
+Group a one-cent EUR difference without changing exact equality:
 
 ```sh
-uv run --locked python execute.py --parameters '{"MIN_ENTRY_AMOUNT":"100.00"}' --output-dir artifacts/minimum-100
+uv run --locked vgi-notebooks 02_compare_messages_before_status.ipynb \
+  --parameters '{"DISPLAY_BAND_EUR":"0.01"}' --output-dir artifacts/one-cent
 ```
 
-Restore `"0.00"` for the default. Override runs require a separate output destination. The runner copies fixtures, documentation, lock and branding beside the executed copy. Environments, validation images, logs and generated experiments are ignored.
+One nonzero difference moves into the display band and one remains outside.
+The exact-match count, raw deltas, unmatched/currency populations and status
+observations stay fixed. The accepted decimal-string range is 0.00–1.00.
+Restore `"0.00"`. The display band is not an accounting or acceptance policy.
 
-## Inputs and analytical contract
+The shared runner requires a separate output directory for parameter overrides and
+writes notebooks only after successful execution. Defaults, both experiments,
+chart reconciliation and one fresh preloaded-kernel bootstrap are checked.
+Hosted Colab was not manually operated. Review PNGs and experiment copies are ignored;
+the notebook SVG outputs and GitHub SVG assets are committed.
 
-`fixtures/eur.xml` and `fixtures/usd.xml` are explicitly synthetic teaching statements, with fabricated account identifiers and no personal data. `manifest.json` records their SHA-256 hashes. Both state 2026-01-02 00:00:00 through 23:59:59 UTC inclusive, with a message creation time of 2026-01-03 06:00:00 UTC. Booking and value fields are dates. They include multiple TxDtls per entry, an entry without details, a pending entry, a debit reversal and an opening debit balance. They are parser inputs, not claims of full schema or payment-network validation.
-
-The [release parser](https://github.com/Query-farm/vgi-iso20022/blob/v0.4.0/crates/iso20022-core/src/mx/camt.rs) repeats `Ntry/Amt` for each TxDtls. SQL verifies entry-level consistency, recovers one row per `(stmt_id, entry_idx)`, applies CRDT/DBIT sign once, excludes PDNG, and keeps account/balance/entry currencies equal. It does not infer individual transaction amounts from a batch total. Reversal does not negate the credit/debit sign a second time. Every money calculation and exact-zero assertion stays in SQL DECIMAL(38,9); visible money tables cast to strings for exact display. Only chart drawing converts to floating point.
-
-The full identity is opening balance plus signed booked entries equals reported closing balance. The filtered identity intentionally retains the complete header balances, so its residual equals the signed movement omitted by the threshold. This illustrates a population mismatch, not a bank error or a recommended accounting threshold. EUR and USD are never summed or converted. Missing/unknown required fields fail checks rather than becoming zero; an empty selected population is the distinct case of a known zero movement sum.
-
-## Pinned-release scope
-
-Version 0.4.0 predates the source fix that narrows `raw` to each statement when a file contains several statements. These fixtures contain exactly one Stmt per file and setup verifies that constraint. Do not reuse this recipe for multi-statement files on that release without independently verifying the child-row mapping. Statement IDs are unique within this demonstration; a production key needs source/account/statement identity and duplicate-file handling.
-
-The notebook establishes parser behavior and arithmetic for these fixtures. It does not establish completeness beyond these files, validate a bank's ledger, perform full ISO 20022/CBPR+ network validation, infer settlement finality or transmit payments. There is no replay/live switch because this is a local computational worker.
+[Coverage evidence](coverage.json) accounts for all eighteen public named SQL
+surfaces and verifies ten through focused visible SQL. It separates actual released
+execution from reviewed current-source compatibility and documents the multi-statement
+behavior difference. Existing green source CI is reused for this notebook-only change.

@@ -1,0 +1,699 @@
+diff --git a/crates/iso20022-core/src/mx/camt053.rs b/crates/iso20022-core/src/mx/camt053.rs
+index 82cae62..c5c5ac9 100644
+--- a/crates/iso20022-core/src/mx/camt053.rs
++++ b/crates/iso20022-core/src/mx/camt053.rs
+@@ -26,6 +26,10 @@ pub struct Statement {
+     pub entry_count: i32,
+     pub sum_credits: Option<Decimal>,
+     pub sum_debits: Option<Decimal>,
++    /// The source document narrowed to just this statement (every other `Stmt`
++    /// removed; see [`dom::split_children`]), carried as the reader's `raw`
++    /// column so `camt053_entries` explodes only this statement's entries.
++    pub raw: String,
+ }
+ 
+ /// Parse a camt.053 document into one row per `Stmt`.
+@@ -40,8 +44,13 @@ pub fn parse(xml: &str) -> Vec<Statement> {
+     let msg_id = grp.and_then(|g| g.text_at(&["MsgId"]));
+     let creation_dt = grp.and_then(|g| datetime_at(g, &["CreDtTm"]));
+ 
++    let docs = dom::split_children(xml, "BkToCstmrStmt", "Stmt");
+     body.children_named("Stmt")
+-        .map(|stmt| statement_of(stmt, msg_id.clone(), creation_dt))
++        .enumerate()
++        .map(|(i, stmt)| Statement {
++            raw: docs.get(i).cloned().unwrap_or_else(|| xml.to_string()),
++            ..statement_of(stmt, msg_id.clone(), creation_dt)
++        })
+         .collect()
+ }
+ 
+@@ -76,6 +85,7 @@ pub(crate) fn statement_of(
+         entry_count,
+         sum_credits: decimal_at(stmt, &["TxsSummry", "TtlCdtNtries", "Sum"]),
+         sum_debits: decimal_at(stmt, &["TxsSummry", "TtlDbtNtries", "Sum"]),
++        raw: String::new(),
+     }
+ }
+ 
+@@ -130,6 +140,30 @@ mod tests {
+         assert_eq!(r.sum_credits, Some(Decimal::from_str("500.00").unwrap()));
+     }
+ 
++    #[test]
++    fn multi_statement_raw_is_narrowed_to_each_statement() {
++        let xml = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>M</MsgId></GrpHdr>
++<Stmt><Id>S1</Id><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry></Stmt>
++<Stmt><Id>S2</Id><Ntry><Amt Ccy="EUR">7.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry><Ntry><Amt Ccy="EUR">8.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry></Stmt>
++</BkToCstmrStmt></Document>"#;
++        let s = parse(xml);
++        assert_eq!(s.len(), 2);
++        // Each row's raw re-parses as a one-statement document with its own header...
++        for (r, id) in s.iter().zip(["S1", "S2"]) {
++            let again = parse(&r.raw);
++            assert_eq!(again.len(), 1);
++            assert_eq!(again[0].stmt_id.as_deref(), Some(id));
++            assert_eq!(again[0].msg_id.as_deref(), Some("M"));
++        }
++        // ...so exploding it yields only that statement's entries.
++        assert_eq!(parse_entries(&s[0].raw).len(), 1);
++        let e2 = parse_entries(&s[1].raw);
++        assert_eq!(e2.len(), 2);
++        assert!(e2.iter().all(|e| e.credit_debit.as_deref() == Some("DBIT")));
++        // A single-statement document keeps its source byte for byte.
++        assert_eq!(parse(XML)[0].raw, XML);
++    }
++
+     #[test]
+     fn parses_entries() {
+         let e = parse_entries(XML);
+diff --git a/crates/iso20022-core/src/mx/camt054.rs b/crates/iso20022-core/src/mx/camt054.rs
+index 04a4ef5..04ecc41 100644
+--- a/crates/iso20022-core/src/mx/camt054.rs
++++ b/crates/iso20022-core/src/mx/camt054.rs
+@@ -22,8 +22,13 @@ pub fn parse(xml: &str) -> Vec<Statement> {
+     let msg_id = grp.and_then(|g| g.text_at(&["MsgId"]));
+     let creation_dt = grp.and_then(|g| datetime_at(g, &["CreDtTm"]));
+ 
++    let docs = dom::split_children(xml, "BkToCstmrDbtCdtNtfctn", "Ntfctn");
+     body.children_named("Ntfctn")
+-        .map(|n| statement_of(n, msg_id.clone(), creation_dt))
++        .enumerate()
++        .map(|(i, n)| Statement {
++            raw: docs.get(i).cloned().unwrap_or_else(|| xml.to_string()),
++            ..statement_of(n, msg_id.clone(), creation_dt)
++        })
+         .collect()
+ }
+ 
+@@ -83,4 +88,17 @@ mod tests {
+         );
+         assert_eq!(r.end_to_end_id.as_deref(), Some("E2E-DEBIT-9"));
+     }
++
++    #[test]
++    fn multi_notification_raw_is_narrowed_to_each_notification() {
++        let xml = r#"<Document><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>M</MsgId></GrpHdr><Ntfctn><Id>N1</Id><Ntry><Amt Ccy="EUR">1.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry></Ntfctn><Ntfctn><Id>N2</Id><Ntry><Amt Ccy="EUR">2.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
++        let s = parse(xml);
++        assert_eq!(s.len(), 2);
++        let e1 = parse_entries(&s[0].raw);
++        let e2 = parse_entries(&s[1].raw);
++        assert_eq!(e1.len(), 1);
++        assert_eq!(e1[0].credit_debit.as_deref(), Some("DBIT"));
++        assert_eq!(e2.len(), 1);
++        assert_eq!(e2[0].credit_debit.as_deref(), Some("CRDT"));
++    }
+ }
+diff --git a/crates/iso20022-core/src/mx/dom.rs b/crates/iso20022-core/src/mx/dom.rs
+index 312ff3e..9856c54 100644
+--- a/crates/iso20022-core/src/mx/dom.rs
++++ b/crates/iso20022-core/src/mx/dom.rs
+@@ -86,6 +86,74 @@ pub fn parse(xml: &str) -> Option<Node> {
+     root
+ }
+ 
++/// Narrow a document to each `child` element of `parent` in turn.
++///
++/// Returns one string per `<child>` element that is a direct child of a
++/// `<parent>` element (both matched on local name), in document order. Each
++/// string is the original source with every *other* `<child>` removed: the
++/// prolog, root, group header, and any trailing siblings are kept byte for byte,
++/// so the result re-parses as a document holding exactly that one child. This is
++/// how a multi-`Stmt` camt.053 (or multi-`Ntfctn` camt.054) gives each reader row
++/// a `raw` that a per-message exploder can unnest without mixing in the other
++/// statements' entries. With zero or one matching child the source is returned
++/// unchanged (one copy per child). Total: malformed XML yields an empty vector.
++pub fn split_children(xml: &str, parent: &str, child: &str) -> Vec<String> {
++    let mut reader = Reader::from_str(xml);
++    let mut stack: Vec<String> = Vec::new();
++    let mut spans: Vec<(usize, usize)> = Vec::new();
++    let mut open: Option<(usize, usize)> = None; // (start offset, depth)
++    loop {
++        let before = reader.buffer_position() as usize;
++        let event = match reader.read_event() {
++            Ok(Event::Eof) => break,
++            Ok(e) => e,
++            Err(_) => return Vec::new(),
++        };
++        let after = reader.buffer_position() as usize;
++        match event {
++            Event::Start(e) => {
++                let name = local_name(e.name().as_ref());
++                if open.is_none()
++                    && name == child
++                    && stack.last().map(String::as_str) == Some(parent)
++                {
++                    open = Some((before, stack.len()));
++                }
++                stack.push(name);
++            }
++            Event::Empty(e) => {
++                if open.is_none()
++                    && local_name(e.name().as_ref()) == child
++                    && stack.last().map(String::as_str) == Some(parent)
++                {
++                    spans.push((before, after));
++                }
++            }
++            Event::End(_) => {
++                stack.pop();
++                if let Some((start, depth)) = open {
++                    if stack.len() == depth {
++                        spans.push((start, after));
++                        open = None;
++                    }
++                }
++            }
++            _ => {}
++        }
++    }
++    let (Some(first), Some(last)) = (spans.first(), spans.last()) else {
++        return Vec::new();
++    };
++    if spans.len() == 1 {
++        return vec![xml.to_string()];
++    }
++    let (head, tail) = (&xml[..first.0], &xml[last.1..]);
++    spans
++        .iter()
++        .map(|&(s, e)| format!("{head}{}{tail}", &xml[s..e]))
++        .collect()
++}
++
+ /// Append the pending text run (trimmed) to the open element, then reset it.
+ fn flush_text(stack: &mut [Node], run: &mut Option<String>) {
+     if let (Some(top), Some(buf)) = (stack.last_mut(), run.as_ref()) {
+@@ -217,6 +285,27 @@ mod tests {
+         assert_eq!(root.child("Amt").unwrap().attr("Ccy"), Some("EUR"));
+     }
+ 
++    #[test]
++    fn split_children_keeps_header_and_one_child_each() {
++        let xml = "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S>1</n:S><n:S><n:S>nested</n:S></n:S><n:S/><n:T>t</n:T></n:B></n:Doc>";
++        let parts = split_children(xml, "B", "S");
++        assert_eq!(
++            parts,
++            vec![
++                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S>1</n:S><n:T>t</n:T></n:B></n:Doc>",
++                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S><n:S>nested</n:S></n:S><n:T>t</n:T></n:B></n:Doc>",
++                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S/><n:T>t</n:T></n:B></n:Doc>",
++            ]
++        );
++        // One child: the source is returned unchanged; none / malformed: empty.
++        assert_eq!(
++            split_children("<B><S>1</S></B>", "B", "S"),
++            vec!["<B><S>1</S></B>"]
++        );
++        assert!(split_children("<B><H/></B>", "B", "S").is_empty());
++        assert!(split_children("<B><S>1</X></B>", "B", "S").is_empty());
++    }
++
+     #[test]
+     fn malformed_is_none_or_partial() {
+         assert!(parse("not xml at all").is_none() || parse("not xml").is_none());
+diff --git a/crates/iso20022-worker/src/composed.rs b/crates/iso20022-worker/src/composed.rs
+new file mode 100644
+index 0000000..c0638c9
+--- /dev/null
++++ b/crates/iso20022-worker/src/composed.rs
+@@ -0,0 +1,97 @@
++//! Composed example queries: realistic SQL that combines two or more of the
++//! worker's own objects (a reader joined to another reader, a reader feeding an
++//! exploder) the way a payments-ops analyst actually uses them.
++//!
++//! Each example is defined **once** here and referenced from both the schema-level
++//! `vgi.example_queries` list (`main.rs`) and the `vgi.example_queries` list of the
++//! object that drives the query (its `ReadTable` / `PerMessageTable` descriptor),
++//! where the `vgi-lint` agent simulator can see it. Every message is supplied
++//! inline (fabricated names / IBANs / BICs), so each query runs offline.
++
++use crate::meta::Example;
++
++/// An MT103 and its pacs.008 twin (same end-to-end id, UETR, and amount).
++macro_rules! dual_mt103 {
++    () => {
++        "{1:F01ACMEDEFFAXXX0000000000}{2:I103DEUTDEFFXXXXN}{3:{121:e3bf1c2a-1111-4aaa-8bbb-1234567890ab}}{4:\n:20:TXN-REF-1\n:23B:CRED\n:32A:260101EUR1234,56\n:50K:/DE89370400440532013000\nACME CORP\n:59:/FR1420041010050500013M02606\nWIDGETS SARL\n:71A:SHA\n:72:/EToE/E2E-REF-001\n-}"
++    };
++}
++macro_rules! dual_pacs008 {
++    () => {
++        r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"><FIToFICstmrCdtTrf><GrpHdr><MsgId>PACS-MSG-1</MsgId></GrpHdr><CdtTrfTxInf><PmtId><EndToEndId>E2E-REF-001</EndToEndId><UETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</UETR></PmtId><IntrBkSttlmAmt Ccy="EUR">1234.56</IntrBkSttlmAmt></CdtTrfTxInf></FIToFICstmrCdtTrf></Document>"#
++    };
++}
++
++/// A two-payment pacs.008 batch and the pacs.002 status report answering it
++/// (the first payment settled, the second rejected AM04).
++macro_rules! batch_pacs008 {
++    () => {
++        r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"><FIToFICstmrCdtTrf><GrpHdr><MsgId>BATCH-7</MsgId></GrpHdr><CdtTrfTxInf><PmtId><EndToEndId>E2E-A</EndToEndId><UETR>0a1b2c3d-0000-4aaa-8bbb-00000000000a</UETR></PmtId><IntrBkSttlmAmt Ccy="EUR">1500.00</IntrBkSttlmAmt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-B</EndToEndId><UETR>0a1b2c3d-0000-4aaa-8bbb-00000000000b</UETR></PmtId><IntrBkSttlmAmt Ccy="EUR">98000.00</IntrBkSttlmAmt><Cdtr><Nm>GADGETS GMBH</Nm></Cdtr></CdtTrfTxInf></FIToFICstmrCdtTrf></Document>"#
++    };
++}
++macro_rules! batch_pacs002 {
++    () => {
++        r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10"><FIToFIPmtStsRpt><GrpHdr><MsgId>STS-7</MsgId></GrpHdr><OrgnlGrpInfAndSts><OrgnlMsgId>BATCH-7</OrgnlMsgId></OrgnlGrpInfAndSts><TxInfAndSts><OrgnlUETR>0a1b2c3d-0000-4aaa-8bbb-00000000000a</OrgnlUETR><TxSts>ACSC</TxSts></TxInfAndSts><TxInfAndSts><OrgnlUETR>0a1b2c3d-0000-4aaa-8bbb-00000000000b</OrgnlUETR><TxSts>RJCT</TxSts><StsRsnInf><Rsn><Cd>AM04</Cd></Rsn></StsRsnInf></TxInfAndSts></FIToFIPmtStsRpt></Document>"#
++    };
++}
++
++/// Two consecutive MT940 statements; STMT-2's reported closing balance is 50.50
++/// higher than its opening balance plus its lines.
++macro_rules! two_mt940 {
++    () => {
++        "{1:F01X}{2:O940X}{4:\n:20:STMT-1\n:25:DE89370400440532013000\n:28C:1/1\n:60F:C260101EUR1000,00\n:61:2601020102C500,00NTRFNONREF//BANK-A\n:61:2601030103D250,50NMSCCUST-REF//BANK-B\n:62F:C260103EUR1249,50\n-}{1:F01X}{2:O940X}{4:\n:20:STMT-2\n:25:DE89370400440532013000\n:28C:2/1\n:60F:C260103EUR1249,50\n:61:2601040104D100,00NMSCREF-2//BANK-C\n:62F:C260104EUR1200,00\n-}"
++    };
++}
++
++/// MT103 <-> pacs.008 dual-running migration QA (`mt103_read` JOIN `pacs008_read`).
++pub const MT103_PACS008_EQUIVALENCE: Example = Example {
++    description: "Migration QA: pair an MT103 with its pacs.008 twin on end_to_end_id and check \
++                  that the settled amount, currency, and UETR agree in both formats.",
++    sql: concat!(
++        "SELECT m.end_to_end_id, m.ccy, m.amount AS mt_amount, p.amount AS mx_amount, \
++         m.amount = p.amount AND m.ccy = p.ccy AS amount_match, m.uetr = p.uetr AS uetr_match \
++         FROM iso20022.main.mt103_read('",
++        dual_mt103!(),
++        "') AS m JOIN iso20022.main.pacs008_read('",
++        dual_pacs008!(),
++        "') AS p USING (end_to_end_id) ORDER BY m.end_to_end_id"
++    ),
++};
++
++/// Payment-status reconciliation (`pacs008_read` LEFT JOIN `pacs002_read`).
++pub const PACS008_STATUS: Example = Example {
++    description: "Status reconciliation: join each pacs.008 credit transfer to the pacs.002 \
++                  status report on UETR to see which payments settled (ACSC) and which were \
++                  rejected, with the reason code.",
++    sql: concat!(
++        "SELECT p.end_to_end_id, p.creditor_name, p.amount, p.ccy, s.tx_status, \
++         s.status_reason_code FROM iso20022.main.pacs008_read('",
++        batch_pacs008!(),
++        "') AS p LEFT JOIN iso20022.main.pacs002_read('",
++        batch_pacs002!(),
++        "') AS s ON s.orig_uetr = p.uetr ORDER BY p.end_to_end_id"
++    ),
++};
++
++/// MT940 balance roll-forward (`mt940_read` feeding `mt940_lines`).
++pub const MT940_ROLL_FORWARD: Example = Example {
++    description: "Statement roll-forward check: explode each MT940 statement's :61: lines, net \
++                  credits against debits, and compare opening balance + net movement with the \
++                  reported closing balance (here STMT-2 is off by 50.50).",
++    sql: concat!(
++        "SELECT transaction_ref, opening_balance, \
++         sum(CASE WHEN credit_debit IN ('D', 'RC') THEN -amount ELSE amount END) AS net_movement, \
++         closing_balance, opening_balance + net_movement = closing_balance AS balanced \
++         FROM iso20022.main.mt940_lines((SELECT transaction_ref, opening_balance, closing_balance, \
++         raw FROM iso20022.main.mt940_read('",
++        two_mt940!(),
++        "'))) GROUP BY transaction_ref, opening_balance, closing_balance ORDER BY transaction_ref"
++    ),
++};
++
++/// Every composed example, in the order the schema-level list shows them.
++pub const ALL: &[Example] = &[
++    MT103_PACS008_EQUIVALENCE,
++    PACS008_STATUS,
++    MT940_ROLL_FORWARD,
++];
+diff --git a/crates/iso20022-worker/src/lib.rs b/crates/iso20022-worker/src/lib.rs
+index 341e942..7e99517 100644
+--- a/crates/iso20022-worker/src/lib.rs
++++ b/crates/iso20022-worker/src/lib.rs
+@@ -7,6 +7,7 @@
+ 
+ pub mod arrow_io;
+ pub mod cols;
++pub mod composed;
+ pub mod meta;
+ pub mod scalar;
+ pub mod table;
+diff --git a/crates/iso20022-worker/src/main.rs b/crates/iso20022-worker/src/main.rs
+index 27be912..bbdbd0f 100644
+--- a/crates/iso20022-worker/src/main.rs
++++ b/crates/iso20022-worker/src/main.rs
+@@ -17,7 +17,9 @@
+ //! pure parse engine lives in the `iso20022-core` crate; the `scalar/`, `table/`,
+ //! and `table_in_out/` modules are thin Arrow adapters over it.
+ 
+-use iso20022_worker::meta::{agent_test_tasks_json, keywords_json, object_tags, AgentTask};
++use iso20022_worker::meta::{
++    agent_test_tasks_json, examples_json, keywords_json, object_tags, AgentTask, Example,
++};
+ use iso20022_worker::{scalar, table, table_in_out};
+ use vgi::catalog::{CatSchema, CatView, CatalogModel};
+ use vgi::Worker;
+@@ -186,8 +188,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+                 // function's doc_md rather than executed here — VGI902).
+                 (
+                     "vgi.example_queries".to_string(),
+-                    r#"[{"description":"Sniff the SWIFT MT message type of an inline FIN message.","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}') AS mt"},{"description":"Read the exact :32A: interbank settled amount of an inline MT103 as a fixed-scale decimal.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount"},{"description":"Validate an inline pacs.008 message and read the ok flag.","sql":"SELECT (iso20022.main.iso20022_validate('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok AS ok"}]"#
+-                        .to_string(),
++                    examples_json(&schema_examples()),
+                 ),
+             ],
+             views: vec![supported_messages_view()],
+@@ -198,6 +199,28 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+     }
+ }
+ 
++/// The schema-level `vgi.example_queries`: three single-scalar starters, then
++/// every composed example (defined once in [`iso20022_worker::composed`]).
++fn schema_examples() -> Vec<Example> {
++    let mut v = vec![
++        Example {
++            description: "Sniff the SWIFT MT message type of an inline FIN message.",
++            sql: "SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}') AS mt",
++        },
++        Example {
++            description: "Read the exact :32A: interbank settled amount of an inline MT103 as a \
++                          fixed-scale decimal.",
++            sql: "SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount",
++        },
++        Example {
++            description: "Validate an inline pacs.008 message and read the ok flag.",
++            sql: r#"SELECT (iso20022.main.iso20022_validate('<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok AS ok"#,
++        },
++    ];
++    v.extend_from_slice(iso20022_worker::composed::ALL);
++    v
++}
++
+ // --- Inline sample messages for the agent-suitability suite ------------------
+ // Fabricated names / IBANs / BICs (no real PII). The MT messages use the SWIFT
+ // `\n` line structure; the MX messages are compact single-line XML so an analyst
+@@ -224,6 +247,13 @@ const CAMT053: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.05
+ 
+ const CAMT054: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-1</MsgId><CreDtTm>2026-01-03T06:30:00Z</CreDtTm></GrpHdr><Ntfctn><Id>NTF-1</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy></Acct><Ntry><Amt Ccy="EUR">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-DEBIT-9</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
+ 
++// Composed-task messages: answering these needs two of the worker's objects.
++const PAIN001_BATCH: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09"><CstmrCdtTrfInitn><GrpHdr><MsgId>PAIN-9</MsgId><InitgPty><Nm>ACME CORP</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>PMT-9</PmtInfId><PmtMtd>TRF</PmtMtd><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><CdtTrfTxInf><PmtId><EndToEndId>E2E-P1</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">1234.56</InstdAmt></Amt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-P2</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">99.00</InstdAmt></Amt><Cdtr><Nm>GADGETS GMBH</Nm></Cdtr></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-P3</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">410.00</InstdAmt></Amt><Cdtr><Nm>GIZMO BV</Nm></Cdtr></CdtTrfTxInf></PmtInf></CstmrCdtTrfInitn></Document>"#;
++
++const CAMT054_DEBITS: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-9</MsgId></GrpHdr><Ntfctn><Id>NTF-9</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Ntry><Amt Ccy="EUR">1234.56</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-P1</EndToEndId></Refs></TxDtls></NtryDtls></Ntry><Ntry><Amt Ccy="EUR">410.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-P3</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
++
++const CAMT053_TWO: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>CAMT053-Q1</MsgId></GrpHdr><Stmt><Id>S-JAN</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1300.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry><Ntry><Amt Ccy="EUR">200.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry></Stmt><Stmt><Id>S-FEB</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1300.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1250.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy="EUR">100.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry><Ntry><Amt Ccy="EUR">40.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry></Stmt></BkToCstmrStmt></Document>"#;
++
+ /// The catalog-level `vgi.agent_test_tasks` suite (VGI520 coverage / VGI920
+ /// agent-simulation). Every registered object — the four scalars, the nine file
+ /// readers, the four statement exploders, and the `supported_messages` view — is
+@@ -326,6 +356,24 @@ fn agent_tasks() -> Vec<AgentTask> {
+                  Explode its entries. Message:\n{CAMT054}\nReturn one column named n."
+             ),
+         ),
++        AgentTask::new(
++            "unbooked_initiated_payment",
++            format!(
++                "ACME CORP sent this pain.001 credit-transfer initiation to its bank:\n{PAIN001_BATCH}\n\
++                 The bank then sent this camt.054 debit notification for the account:\n\
++                 {CAMT054_DEBITS}\nWhich initiated payment has no matching entry (by end-to-end \
++                 id) in the notification yet? Return one column named end_to_end_id."
++            ),
++        ),
++        AgentTask::new(
++            "camt053_unbalanced_statement",
++            format!(
++                "This camt.053 file carries two statements for one account:\n{CAMT053_TWO}\n\
++                 For which statement does the closing booked balance NOT equal the opening booked \
++                 balance plus its credit entries minus its debit entries? Return one column named \
++                 stmt_id."
++            ),
++        ),
+         AgentTask::new(
+             "supported_messages_with_exploder",
+             "Which message types does the iso20022 worker expose a dedicated statement or \
+diff --git a/crates/iso20022-worker/src/meta.rs b/crates/iso20022-worker/src/meta.rs
+index ce53b7f..aa1e64a 100644
+--- a/crates/iso20022-worker/src/meta.rs
++++ b/crates/iso20022-worker/src/meta.rs
+@@ -187,3 +187,25 @@ pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
+         .collect();
+     format!("[{}]", items.join(","))
+ }
++
++/// One `{description, sql}` entry of a `vgi.example_queries` list.
++#[derive(Debug, Clone, Copy)]
++pub struct Example {
++    pub description: &'static str,
++    pub sql: &'static str,
++}
++
++/// Encode examples as the JSON array `vgi.example_queries` carries.
++pub fn examples_json(examples: &[Example]) -> String {
++    let items: Vec<String> = examples
++        .iter()
++        .map(|e| {
++            format!(
++                "{{\"description\":\"{}\",\"sql\":\"{}\"}}",
++                json_esc(e.description),
++                json_esc(e.sql)
++            )
++        })
++        .collect();
++    format!("[{}]", items.join(","))
++}
+diff --git a/crates/iso20022-worker/src/table/camt053.rs b/crates/iso20022-worker/src/table/camt053.rs
+index 9d07b88..2cbdd58 100644
+--- a/crates/iso20022-worker/src/table/camt053.rs
++++ b/crates/iso20022-worker/src/table/camt053.rs
+@@ -44,13 +44,18 @@ pub fn schema() -> SchemaRef {
+         commented("entry_count", DataType::Int32, "Count of Ntry."),
+         commented("sum_credits", money_type(), "TxsSummry/TtlCdtNtries/Sum."),
+         commented("sum_debits", money_type(), "TxsSummry/TtlDbtNtries/Sum."),
+-        commented("raw", DataType::Utf8, "The whole source document."),
++        commented(
++            "raw",
++            DataType::Utf8,
++            "The source document narrowed to this statement (other statements removed), for \
++             the entries exploder.",
++        ),
+         commented("path", DataType::Utf8, "Source file path."),
+     ]))
+ }
+ 
+ /// Build a batch from already-parsed statement/notification headers.
+-pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array::RecordBatch {
++pub fn build_rows(path: &str, rows: &[Statement]) -> arrow_array::RecordBatch {
+     let s = schema();
+     let cols = vec![
+         str_col(rows.iter().map(|r| r.msg_id.clone())),
+@@ -70,7 +75,7 @@ pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array:
+         int_col(rows.iter().map(|r| Some(r.entry_count))),
+         dec_col(rows.iter().map(|r| r.sum_credits)),
+         dec_col(rows.iter().map(|r| r.sum_debits)),
+-        str_col(rows.iter().map(|_| Some(content))),
++        str_col(rows.iter().map(|r| Some(r.raw.as_str()))),
+         str_col(rows.iter().map(|_| Some(path))),
+     ];
+     finish(&s, cols)
+@@ -79,7 +84,7 @@ pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array:
+ /// Parse one file's camt.053 statements into a batch.
+ pub fn build(path: &str, content: &str) -> arrow_array::RecordBatch {
+     let rows = iso20022_core::mx::camt053::parse(content);
+-    build_rows(path, content, &rows)
++    build_rows(path, &rows)
+ }
+ 
+ /// The `camt053_read` table-function descriptor.
+@@ -98,6 +103,7 @@ pub fn table() -> ReadTable {
+         keywords: "camt.053, camt053, BkToCstmrStmt, bank statement, opening balance, closing \
+                    balance, iban, reconciliation, iso 20022, statement",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+ 
+diff --git a/crates/iso20022-worker/src/table/camt054.rs b/crates/iso20022-worker/src/table/camt054.rs
+index 4912143..1050397 100644
+--- a/crates/iso20022-worker/src/table/camt054.rs
++++ b/crates/iso20022-worker/src/table/camt054.rs
+@@ -11,7 +11,7 @@ const EXAMPLES: &str = r#"[{"description":"Parse an inline camt.054 debit/credit
+ /// Parse one file's camt.054 notifications into a batch.
+ pub fn build(path: &str, content: &str) -> arrow_array::RecordBatch {
+     let rows = core::parse(content);
+-    build_rows(path, content, &rows)
++    build_rows(path, &rows)
+ }
+ 
+ /// The `camt054_read` table-function descriptor.
+@@ -30,5 +30,6 @@ pub fn table() -> ReadTable {
+         keywords: "camt.054, camt054, BkToCstmrDbtCdtNtfctn, notification, debit credit advice, \
+                    iso 20022, entries, reconciliation",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+diff --git a/crates/iso20022-worker/src/table/common.rs b/crates/iso20022-worker/src/table/common.rs
+index 1366df9..8c35f0b 100644
+--- a/crates/iso20022-worker/src/table/common.rs
++++ b/crates/iso20022-worker/src/table/common.rs
+@@ -22,6 +22,9 @@ pub struct ReadTable {
+     /// reader is demonstrated on inline message text so the example returns rows
+     /// without a data file present (VGI511/VGI906).
+     pub executable_examples: &'static str,
++    /// Composed `vgi.example_queries` this object drives (see [`crate::composed`]);
++    /// empty for objects that only appear in examples driven by another object.
++    pub example_queries: &'static [crate::meta::Example],
+ }
+ 
+ impl TableFunction for ReadTable {
+@@ -54,6 +57,12 @@ impl TableFunction for ReadTable {
+             "vgi.executable_examples".into(),
+             self.executable_examples.into(),
+         ));
++        if !self.example_queries.is_empty() {
++            tags.push((
++                "vgi.example_queries".into(),
++                crate::meta::examples_json(self.example_queries),
++            ));
++        }
+         FunctionMetadata {
+             description: self.doc_md.to_string(),
+             tags,
+diff --git a/crates/iso20022-worker/src/table/mt103.rs b/crates/iso20022-worker/src/table/mt103.rs
+index 817c6ac..23e66f7 100644
+--- a/crates/iso20022-worker/src/table/mt103.rs
++++ b/crates/iso20022-worker/src/table/mt103.rs
+@@ -148,6 +148,7 @@ pub fn table() -> ReadTable {
+         keywords: "mt103, swift mt, credit transfer, ordering customer, beneficiary, 32A, 50K, 59, \
+                    uetr, end to end id, payments, fin",
+         executable_examples: EXAMPLES,
++        example_queries: &[crate::composed::MT103_PACS008_EQUIVALENCE],
+     }
+ }
+ 
+diff --git a/crates/iso20022-worker/src/table/mt202.rs b/crates/iso20022-worker/src/table/mt202.rs
+index cda4b3a..c17dd7b 100644
+--- a/crates/iso20022-worker/src/table/mt202.rs
++++ b/crates/iso20022-worker/src/table/mt202.rs
+@@ -88,5 +88,6 @@ pub fn table() -> ReadTable {
+         keywords: "mt202, mt202 cov, swift mt, fi transfer, cover payment, correspondent banking, \
+                    beneficiary institution, uetr, fin",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+diff --git a/crates/iso20022-worker/src/table/mt940.rs b/crates/iso20022-worker/src/table/mt940.rs
+index eff264e..168b71c 100644
+--- a/crates/iso20022-worker/src/table/mt940.rs
++++ b/crates/iso20022-worker/src/table/mt940.rs
+@@ -101,6 +101,7 @@ pub fn table() -> ReadTable {
+         keywords: "mt940, swift mt, bank statement, opening balance, closing balance, 60F, 62F, \
+                    statement lines, reconciliation, fin",
+         executable_examples: EXAMPLES,
++        example_queries: &[crate::composed::MT940_ROLL_FORWARD],
+     }
+ }
+ 
+diff --git a/crates/iso20022-worker/src/table/mt942.rs b/crates/iso20022-worker/src/table/mt942.rs
+index 813cc90..d28dfe1 100644
+--- a/crates/iso20022-worker/src/table/mt942.rs
++++ b/crates/iso20022-worker/src/table/mt942.rs
+@@ -92,5 +92,6 @@ pub fn table() -> ReadTable {
+         keywords: "mt942, swift mt, interim report, floor limit, 34F, 90D, 90C, intraday, \
+                    statement lines, fin",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+diff --git a/crates/iso20022-worker/src/table/pacs002.rs b/crates/iso20022-worker/src/table/pacs002.rs
+index 4e0dd3e..dee7322 100644
+--- a/crates/iso20022-worker/src/table/pacs002.rs
++++ b/crates/iso20022-worker/src/table/pacs002.rs
+@@ -101,5 +101,6 @@ pub fn table() -> ReadTable {
+         keywords: "pacs.002, pacs002, FIToFIPmtStsRpt, payment status, ACSC, RJCT, reason code, \
+                    acknowledgement, rejection, iso 20022",
+         executable_examples: EXAMPLES,
++        example_queries: &[crate::composed::PACS008_STATUS],
+     }
+ }
+diff --git a/crates/iso20022-worker/src/table/pacs008.rs b/crates/iso20022-worker/src/table/pacs008.rs
+index fa84fd3..637e6eb 100644
+--- a/crates/iso20022-worker/src/table/pacs008.rs
++++ b/crates/iso20022-worker/src/table/pacs008.rs
+@@ -160,6 +160,10 @@ pub fn table() -> ReadTable {
+         keywords: "pacs.008, pacs008, FIToFICstmrCdtTrf, credit transfer, payments, iso 20022, \
+                    end to end id, uetr, iban, bic, settled amount, reconciliation, cbpr+",
+         executable_examples: EXAMPLES,
++        example_queries: &[
++            crate::composed::MT103_PACS008_EQUIVALENCE,
++            crate::composed::PACS008_STATUS,
++        ],
+     }
+ }
+ 
+diff --git a/crates/iso20022-worker/src/table/pain001.rs b/crates/iso20022-worker/src/table/pain001.rs
+index ca8973b..e56d0f0 100644
+--- a/crates/iso20022-worker/src/table/pain001.rs
++++ b/crates/iso20022-worker/src/table/pain001.rs
+@@ -119,5 +119,6 @@ pub fn table() -> ReadTable {
+         keywords: "pain.001, pain001, CstmrCdtTrfInitn, credit initiation, payment initiation, \
+                    iso 20022, debtor, creditor, iban, requested execution date, ctrl sum",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+diff --git a/crates/iso20022-worker/src/table_in_out/common.rs b/crates/iso20022-worker/src/table_in_out/common.rs
+index 3c3795f..f60ba8e 100644
+--- a/crates/iso20022-worker/src/table_in_out/common.rs
++++ b/crates/iso20022-worker/src/table_in_out/common.rs
+@@ -44,6 +44,9 @@ pub struct PerMessageTable {
+     pub doc_md: &'static str,
+     pub keywords: &'static str,
+     pub executable_examples: &'static str,
++    /// Composed `vgi.example_queries` this object drives (see [`crate::composed`]);
++    /// empty for objects that only appear in examples driven by another object.
++    pub example_queries: &'static [crate::meta::Example],
+ }
+ 
+ /// The name of the input column holding the message (default `raw`).
+@@ -84,6 +87,12 @@ impl TableInOutFunction for PerMessageTable {
+             "vgi.executable_examples".into(),
+             self.executable_examples.into(),
+         ));
++        if !self.example_queries.is_empty() {
++            tags.push((
++                "vgi.example_queries".into(),
++                crate::meta::examples_json(self.example_queries),
++            ));
++        }
+         FunctionMetadata {
+             description: self.doc_md.to_string(),
+             tags,
+diff --git a/crates/iso20022-worker/src/table_in_out/entries.rs b/crates/iso20022-worker/src/table_in_out/entries.rs
+index d4091a0..8389080 100644
+--- a/crates/iso20022-worker/src/table_in_out/entries.rs
++++ b/crates/iso20022-worker/src/table_in_out/entries.rs
+@@ -153,6 +153,7 @@ pub fn camt053_entries() -> PerMessageTable {
+         keywords: "camt.053, entries, ntry, statement lines, reconciliation, credit debit, \
+                    end to end id, counterparty, passthrough, iso 20022",
+         executable_examples: EXAMPLES,
++        example_queries: &[],
+     }
+ }
+ 
+@@ -171,6 +172,7 @@ pub fn camt054_entries() -> PerMessageTable {
+         keywords: "camt.054, entries, ntry, notification, debit credit advice, reconciliation, \
+                    counterparty, passthrough, iso 20022",
+         executable_examples: EXAMPLES_054,
++        example_queries: &[],
+     }
+ }
+ 
+diff --git a/crates/iso20022-worker/src/table_in_out/lines.rs b/crates/iso20022-worker/src/table_in_out/lines.rs
+index 6cb2e92..a71e5cc 100644
+--- a/crates/iso20022-worker/src/table_in_out/lines.rs
++++ b/crates/iso20022-worker/src/table_in_out/lines.rs
+@@ -108,6 +108,7 @@ pub fn mt940_lines() -> PerMessageTable {
+         keywords: "mt940, statement lines, 61, 86, narrative, credit debit, transaction type, \
+                    reconciliation, passthrough, fin",
+         executable_examples: EXAMPLES,
++        example_queries: &[crate::composed::MT940_ROLL_FORWARD],
+     }
+ }
+ 
+@@ -130,6 +131,7 @@ pub fn mt942_lines() -> PerMessageTable {
+         keywords: "mt942, interim report, statement lines, 61, 86, narrative, intraday, \
+                    reconciliation, passthrough, fin",
+         executable_examples: EXAMPLES_942,
++        example_queries: &[],
+     }
+ }
+ 

@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-iso20022",
+  "revision": "3a4536bf56656f71e35c362c10e72993fbfb654e",
+  "captured_at": "2026-11-14T21:19:58.589184+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "objects": [
+    {
+      "schema": "main",
+      "name": "camt053_entries",
+      "kind": "function",
+      "signatures": [
+        "camt053_entries(TABLE, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "camt053_read",
+      "kind": "function",
+      "signatures": [
+        "camt053_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "camt054_entries",
+      "kind": "function",
+      "signatures": [
+        "camt054_entries(TABLE, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "camt054_read",
+      "kind": "function",
+      "signatures": [
+        "camt054_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "iso20022_mt103_amount",
+      "kind": "function",
+      "signatures": [
+        "iso20022_mt103_amount(ANY) -> DECIMAL(38,9)"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "iso20022_mt103_field",
+      "kind": "function",
+      "signatures": [
+        "iso20022_mt103_field(ANY, VARCHAR) -> VARCHAR"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "iso20022_mt_type",
+      "kind": "function",
+      "signatures": [
+        "iso20022_mt_type(ANY) -> VARCHAR"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "iso20022_validate",
+      "kind": "function",
+      "signatures": [
+        "iso20022_validate(ANY) -> STRUCT(ok BOOLEAN, errors VARCHAR[])"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt103_read",
+      "kind": "function",
+      "signatures": [
+        "mt103_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt202_read",
+      "kind": "function",
+      "signatures": [
+        "mt202_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt940_lines",
+      "kind": "function",
+      "signatures": [
+        "mt940_lines(TABLE, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt940_read",
+      "kind": "function",
+      "signatures": [
+        "mt940_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt942_lines",
+      "kind": "function",
+      "signatures": [
+        "mt942_lines(TABLE, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "mt942_read",
+      "kind": "function",
+      "signatures": [
+        "mt942_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "pacs002_read",
+      "kind": "function",
+      "signatures": [
+        "pacs002_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "pacs008_read",
+      "kind": "function",
+      "signatures": [
+        "pacs008_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "pain001_read",
+      "kind": "function",
+      "signatures": [
+        "pain001_read(ANY) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "supported_messages",
+      "kind": "table",
+      "signatures": [
+        "VIEW"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "coverage/current-registrations.json",
+      "sha256": "17541b608d8d89d6da0ba74482fda419129bfa05af1ce4829b21a3c77f618139",
+      "description": "Reviewed current registrations, full source diff and constrained one-statement compatibility; no current runtime claim"
+    },
+    {
+      "path": "coverage/release-to-current.diff",
+      "sha256": "5184601c4bed6840c09b3c03381abbef70c1cf3e99cb51406a6757b243617441",
+      "description": "Reviewed current registrations, full source diff and constrained one-statement compatibility; no current runtime claim"
+    },
+    {
+      "path": "coverage/current-source-review.md",
+      "sha256": "d08acff7d6ae73fa3dbedb9a6740599e62869a518a80bfaadac459e361e189de",
+      "description": "Reviewed current registrations, full source diff and constrained one-statement compatibility; no current runtime claim"
+    }
+  ]
+}

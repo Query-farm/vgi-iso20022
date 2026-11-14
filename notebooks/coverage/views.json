@@ -1,0 +1,44 @@
+{
+  "query": "SELECT * FROM duckdb_views() WHERE database_name='iso20022' ORDER BY schema_name,view_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "schema_oid",
+    "view_name",
+    "view_oid",
+    "comment",
+    "tags",
+    "internal",
+    "temporary",
+    "column_count",
+    "sql",
+    "is_bound"
+  ],
+  "rows": [
+    [
+      "iso20022",
+      22592,
+      "main",
+      22804,
+      "supported_messages",
+      22805,
+      "Registry of the SWIFT MT and ISO 20022 MX message types this worker parses, with the reader and exploder function for each.",
+      {
+        "domain": "payments-and-banking",
+        "topic": "iso20022-swift-mt",
+        "vgi.category": "Discovery",
+        "vgi.doc_llm": "A browsable registry of every SWIFT MT and ISO 20022 MX message type this worker parses. One row per message type carries its family (SWIFT MT / ISO 20022 MX), the reader function that turns the message (inline text, a file path, or a glob) into rows, the optional exploder function that unnests its entries or lines, and a one-line description. Query it to discover what the worker supports before guessing reader arguments.",
+        "vgi.doc_md": "## supported_messages\n\nA browsable registry of the message types this worker parses \u2014 one row per type with its `family`, `reader_function`, optional `exploder_function`, and a short `description`. Filter it (for example on `exploder_function IS NOT NULL`) to find which messages have an entry/line exploder. Local-only, no network.",
+        "vgi.example_queries": "[{\"description\":\"List the message types that have a dedicated entry/line exploder function, with their reader.\",\"sql\":\"SELECT message_type, reader_function, exploder_function FROM iso20022.main.supported_messages WHERE exploder_function IS NOT NULL ORDER BY message_type\"}]",
+        "vgi.keywords": "[\"supported messages\",\"registry\",\"catalog\",\"discovery\",\"message types\",\"readers\",\"exploders\",\"mt\",\"mx\",\"iso 20022\",\"swift\"]",
+        "vgi.title": "Supported Message Registry"
+      },
+      false,
+      false,
+      null,
+      "CREATE VIEW supported_messages AS SELECT * FROM (SELECT * FROM (VALUES ('MT103', 'SWIFT MT', 'mt103_read', CAST(NULL AS VARCHAR), 'Single customer credit transfer (FIN MT103).'), ('MT202', 'SWIFT MT', 'mt202_read', CAST(NULL AS VARCHAR), 'General financial-institution transfer and cover payment (MT202/COV).'), ('MT940', 'SWIFT MT', 'mt940_read', 'mt940_lines', 'Customer statement, end of day.'), ('MT942', 'SWIFT MT', 'mt942_read', 'mt942_lines', 'Interim transaction report, intra-day.'), ('pacs.008', 'ISO 20022 MX', 'pacs008_read', CAST(NULL AS VARCHAR), 'FI-to-FI customer credit transfer.'), ('pacs.002', 'ISO 20022 MX', 'pacs002_read', CAST(NULL AS VARCHAR), 'Payment status report.'), ('pain.001', 'ISO 20022 MX', 'pain001_read', CAST(NULL AS VARCHAR), 'Customer credit-transfer initiation.'), ('camt.053', 'ISO 20022 MX', 'camt053_read', 'camt053_entries', 'Bank-to-customer statement.'), ('camt.054', 'ISO 20022 MX', 'camt054_read', 'camt054_entries', 'Bank-to-customer debit/credit notification.')) AS valueslist) AS t(message_type, \"family\", reader_function, exploder_function, description);",
+      false
+    ]
+  ]
+}

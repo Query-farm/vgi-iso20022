@@ -1,0 +1,1108 @@
+{
+  "schema_version": 1,
+  "status": "met",
+  "meets_target": true,
+  "catalogs": {
+    "released": {
+      "catalog_status": "verified",
+      "revision": "v0.4.0",
+      "catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+      "collection_reconciled": true,
+      "denominator": 18,
+      "observed_objects": 18,
+      "required": 9,
+      "verified_count": 10,
+      "candidate_count": 0,
+      "fraction": 0.5555555555555556,
+      "meets_target": true,
+      "exact_runtime_count": 10,
+      "runtime_revisions": [
+        "v0.4.0"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_entries"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_amount"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_field"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt_type"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_validate"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt103_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs002_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs008_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "supported_messages"
+        }
+      ],
+      "uncovered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_entries"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt202_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_lines"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_lines"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pain001_read"
+        }
+      ],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_entries",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt053_entries(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt053_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_entries",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt054_entries(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt054_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_amount",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt103_amount(ANY) -> DECIMAL(38,9)"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_field",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt103_field(ANY, VARCHAR) -> VARCHAR"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt_type",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt_type(ANY) -> VARCHAR"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_validate",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_validate(ANY) -> STRUCT(ok BOOLEAN, errors VARCHAR[])"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt103_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt103_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt202_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt202_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_lines",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt940_lines(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt940_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_lines",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt942_lines(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt942_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs002_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pacs002_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs008_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pacs008_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pain001_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pain001_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "supported_messages",
+          "kinds": [
+            "table"
+          ],
+          "signatures": [
+            "VIEW"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    },
+    "current": {
+      "catalog_status": "verified",
+      "revision": "3a4536bf56656f71e35c362c10e72993fbfb654e",
+      "catalog_sha256": "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2",
+      "collection_reconciled": false,
+      "denominator": 18,
+      "observed_objects": 18,
+      "required": 9,
+      "verified_count": 10,
+      "candidate_count": 0,
+      "fraction": 0.5555555555555556,
+      "meets_target": true,
+      "exact_runtime_count": 0,
+      "runtime_revisions": [
+        "v0.4.0"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_entries"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_amount"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_field"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt_type"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_validate"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt103_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs002_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs008_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "supported_messages"
+        }
+      ],
+      "uncovered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_entries"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt202_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_lines"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_lines"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_read"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pain001_read"
+        }
+      ],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_entries",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt053_entries(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt053_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt053_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_entries",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt054_entries(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "camt054_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "camt054_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_amount",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt103_amount(ANY) -> DECIMAL(38,9)"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt103_field",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt103_field(ANY, VARCHAR) -> VARCHAR"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_mt_type",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_mt_type(ANY) -> VARCHAR"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "iso20022_validate",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "iso20022_validate(ANY) -> STRUCT(ok BOOLEAN, errors VARCHAR[])"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt103_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt103_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt202_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt202_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_lines",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt940_lines(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt940_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt940_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_lines",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt942_lines(TABLE, VARCHAR) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "mt942_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "mt942_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs002_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pacs002_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pacs008_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pacs008_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "pain001_read",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "pain001_read(ANY) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "supported_messages",
+          "kinds": [
+            "table"
+          ],
+          "signatures": [
+            "VIEW"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    }
+  },
+  "interface_drift": {
+    "known": true,
+    "current_only": [],
+    "released_only": [],
+    "changed": []
+  },
+  "notebooks": {
+    "01_reconcile_entries_not_details.ipynb": {
+      "verified": true,
+      "issues": []
+    },
+    "02_compare_messages_before_status.ipynb": {
+      "verified": true,
+      "issues": []
+    }
+  },
+  "examples": [
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "camt053_read"
+      },
+      "notebook": "01_reconcile_entries_not_details.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "camt053_entries"
+      },
+      "notebook": "01_reconcile_entries_not_details.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "supported_messages"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "iso20022_mt_type"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "iso20022_mt103_field"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "iso20022_mt103_amount"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "iso20022_validate"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "mt103_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "pacs008_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "pacs002_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "runtime_revision": "v0.4.0",
+      "runtime_catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49"
+    }
+  ],
+  "issues": []
+}

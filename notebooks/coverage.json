@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "catalog_sha256": "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+        "notes": "Complete actual v0.4.0 functions/tables/views export:18 logical names; all public objects retained, including uncovered readers/exploders."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "catalog_sha256": "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2",
+        "notes": "All18 current registrations and unchanged signatures reviewed against release; current source3a4536bf fixes multi-statement camt raw documents. First notebook requires one statement per file, whose behavior is preserved. Other demonstrated parsers unchanged. Current runtime not separately executed."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_reconcile_entries_not_details.ipynb",
+      "sha256": "3995cf64c51c8ac550f0bea73489d708b97f23216764ad732d215a3a50167ecd",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "80a559fd56ccfa5a224ea761fc9aa0c0fc94fd42011f234f2f983a49ae4af78a"
+      }
+    },
+    {
+      "path": "02_compare_messages_before_status.ipynb",
+      "sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "48a58d31d6153f3161e1a47ff4e8fa9c6a3cf47d98b7b214912b5fdfc32c6954"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "camt053_read"
+      },
+      "notebook": "01_reconcile_entries_not_details.ipynb",
+      "sql": [
+        {
+          "cell": "e6eacf3a",
+          "reference": "iso20022.main.camt053_read"
+        }
+      ],
+      "narrative_cells": [
+        "9a944c13",
+        "ce806e61"
+      ],
+      "result_cells": [
+        "71e74637",
+        "251d1b49",
+        "4e7c1a2b"
+      ],
+      "interpretation_cells": [
+        "71e74637",
+        "4e7c1a2b"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3995cf64c51c8ac550f0bea73489d708b97f23216764ad732d215a3a50167ecd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Parse statement balances and preserve account/currency identity for exact reconciliation.",
+        "finding": "Both authored statements reconcile with all booked entries. Filtering retains source balances but changes the included population; omitted signed movement explains residuals exactly. One statement per file is explicitly verified due to release limitation."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "camt053_entries"
+      },
+      "notebook": "01_reconcile_entries_not_details.ipynb",
+      "sql": [
+        {
+          "cell": "e6eacf3a",
+          "reference": "iso20022.main.camt053_entries"
+        }
+      ],
+      "narrative_cells": [
+        "9a944c13",
+        "6843ff3b",
+        "c05be4ba"
+      ],
+      "result_cells": [
+        "71e74637",
+        "251d1b49",
+        "8c68d831"
+      ],
+      "interpretation_cells": [
+        "71e74637",
+        "251d1b49",
+        "8c68d831"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3995cf64c51c8ac550f0bea73489d708b97f23216764ad732d215a3a50167ecd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Explode relation-input entries with parent identity and recover entry grain before aggregation.",
+        "finding": "Header counts match distinct entries while detail rows expand; repeated entry-level fields are complete and consistent. Correct and naive nets differ within each currency. Pending entries stay visible, and reversal flags do not flip credit/debit sign twice."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "supported_messages"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "attach",
+          "reference": "iso20022.main.supported_messages"
+        }
+      ],
+      "narrative_cells": [
+        "connection-story"
+      ],
+      "result_cells": [
+        "attach"
+      ],
+      "interpretation_cells": [
+        "connection-story",
+        "inspection-story"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Discover the three released readers needed for dual-running comparisons and status observations.",
+        "finding": "The view returns MT103,pacs.008,pacs.002; those actual named readers drive later visible SQL. Complete catalog exports retain all other supported reader/exploder names in the denominator."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "iso20022_mt_type"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "inspect",
+          "reference": "iso20022.main.iso20022_mt_type"
+        }
+      ],
+      "narrative_cells": [
+        "inspection-story"
+      ],
+      "result_cells": [
+        "inspect-result"
+      ],
+      "interpretation_cells": [
+        "inspect-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Guard the MT103 reader choice using actual FIN message type detection.",
+        "finding": "Allfive authored FIN messages return MT103; the returned type is inspected alongside raw settlement fields and exact scalar amounts."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "iso20022_mt103_field"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "inspect",
+          "reference": "iso20022.main.iso20022_mt103_field"
+        }
+      ],
+      "narrative_cells": [
+        "inspection-story"
+      ],
+      "result_cells": [
+        "inspect-result"
+      ],
+      "interpretation_cells": [
+        "inspect-result",
+        "validation-story"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Retain raw date/currency/amount and charge-code context behind the numeric amount.",
+        "finding": "Field32A preserves currency and comma notation;71A carriesSHA. The notebook explains that amount equality alone does not establish complete field equivalence and later uses charge-code replacement as a validation control."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "iso20022_mt103_amount"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "inspect",
+          "reference": "iso20022.main.iso20022_mt103_amount"
+        }
+      ],
+      "narrative_cells": [
+        "inspection-story"
+      ],
+      "result_cells": [
+        "inspect-result",
+        "key-checks"
+      ],
+      "interpretation_cells": [
+        "inspect-result",
+        "key-checks"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Parse settlement amounts as exact DECIMAL and independently reconcile reader results.",
+        "finding": "Allfive scalar amounts equal corresponding MT103 table-reader amounts; DECIMAL38,9 type is verified. Raw currency context remains separate; no conversion is inferred."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "iso20022_validate"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "validate",
+          "reference": "iso20022.main.iso20022_validate"
+        }
+      ],
+      "narrative_cells": [
+        "validation-story"
+      ],
+      "result_cells": [
+        "validation-result"
+      ],
+      "interpretation_cells": [
+        "validation-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Expose selected field-rule validation and a deliberate invalid charge-code control.",
+        "finding": "Ten original representations pass; the isolated XXX charge control fails. Currency disagreement between otherwise valid messages remains a separate cross-message concern. No fullXSD or network acceptance claim."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "mt103_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "read-payments",
+          "reference": "iso20022.main.mt103_read"
+        }
+      ],
+      "narrative_cells": [
+        "pairing-story"
+      ],
+      "result_cells": [
+        "read-payments",
+        "key-checks",
+        "pair-result",
+        "chart"
+      ],
+      "interpretation_cells": [
+        "key-checks",
+        "pair-result",
+        "chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Read MT counterparts, validate unique UETRs and retain unmatched identities.",
+        "finding": "Five MT rows have unique nonempty UETRs and match the scalar amount cross-check. Full outer join retains MT-onlyP4, and identity/currency checks protect the three EUR delta calculations."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "pacs008_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "read-payments",
+          "reference": "iso20022.main.pacs008_read"
+        }
+      ],
+      "narrative_cells": [
+        "pairing-story",
+        "band-story"
+      ],
+      "result_cells": [
+        "read-payments",
+        "key-checks",
+        "pair-result",
+        "chart"
+      ],
+      "interpretation_cells": [
+        "pair-result",
+        "chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Read MX representations and compare exact amounts only within matching currency.",
+        "finding": "Five MX rows retain MX-onlyP5 and currency-disagreementP6. Comparable EUR deltas remain0.00,+0.01,+2.00 even when the display band changes. No missing delta is converted to zero."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "pacs002_read"
+      },
+      "notebook": "02_compare_messages_before_status.ipynb",
+      "sql": [
+        {
+          "cell": "read-status",
+          "reference": "iso20022.main.pacs002_read"
+        }
+      ],
+      "narrative_cells": [
+        "status-story"
+      ],
+      "result_cells": [
+        "read-status",
+        "status-result"
+      ],
+      "interpretation_cells": [
+        "status-result",
+        "experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:22:25.048919+00:00",
+        "notebook_sha256": "3598ebc82beb0db0fb905392f59d66f40eb9737039b11eb8c84c4262ae665cdd",
+        "catalog_sha256": [
+          "19e7ffaa355af902614aa88c56e1ce64a408c33d6ba2a43b191cfcf3979faa49",
+          "a951970016fd3b2d75a3018d61ea8a08bbae6ad89c454e114640a403d9ab70c2"
+        ],
+        "purpose": "Join independently observed statuses after auditing one report per original UETR.",
+        "finding": "Three reports have unique original references; the left join keeps allsix identities. P1 has equal amounts andRJCT/AM04; P2 has a one-cent difference andACCP. No report is not success, and an acceptance-stage observation is not final settlement."
+      }
+    }
+  ]
+}

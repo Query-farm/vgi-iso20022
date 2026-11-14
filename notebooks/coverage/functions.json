@@ -1,0 +1,641 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='iso20022' ORDER BY schema_name,function_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "camt053_entries",
+      null,
+      "table",
+      "Explode camt.053 statement Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
+      null,
+      {
+        "vgi.category": "Statement exploders",
+        "vgi.doc_llm": "Explode the Ntry rows of camt.053 statements (or any camt.053/054 documents) into one row per entry, with multi-TxDtls split by tx_idx and every input column passed through. Pass a relation whose `raw` column (or the column named by `msg`) holds each statement \u2014 typically the output of camt053_read \u2014 to get amount, credit/debit, dates, references, counterparty, and remittance for reconciliation.",
+        "vgi.doc_md": "# Explode camt.053 Entries\n\nExplode the Ntry rows of camt.053 statements (or any camt.053/054 documents) into one row per entry, with multi-TxDtls split by tx_idx and every input column passed through. Pass a relation whose `raw` column (or the column named by `msg`) holds each statement \u2014 typically the output of camt053_read \u2014 to get amount, credit/debit, dates, references, counterparty, and remittance for reconciliation.\n\n## Calling it\n\nThis is a table-in-out function: pass the relation to explode as a subquery, e.g. `camt053_entries((SELECT raw FROM <reader>('\u2026')))`, or feed it any relation that exposes a `raw` message column (rename it with `msg := 'col'`). Every input column is passed through unchanged, repeated once per child row, so results correlate back to the parent.\n\n## Result schema\n\nThe passthrough input columns come first, followed by the fixed child columns \u2014 their names, types, and meanings are documented in `vgi.result_dynamic_columns_md`, and a runnable call is in `vgi.executable_examples`. Local-only \u2014 no network, no egress.",
+        "vgi.executable_examples": "[{\"description\":\"Explode the entries of an inline camt.053 statement.\",\"sql\":\"SELECT amount, credit_debit, end_to_end_id FROM iso20022.main.camt053_entries((SELECT '<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.08\\\"><BkToCstmrStmt><Stmt><Id>S</Id><Ntry><Amt Ccy=\\\"EUR\\\">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><NtryDtls><TxDtls><Refs><EndToEndId>E2E</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>' AS raw))\"}]",
+        "vgi.keywords": "[\"camt.053\",\"entries\",\"ntry\",\"statement lines\",\"reconciliation\",\"credit debit\",\"end to end id\",\"counterparty\",\"passthrough\",\"iso 20022\"]",
+        "vgi.result_dynamic_columns_md": "The result schema is **dynamic**: every column of the input relation you pass is returned first, unchanged and repeated once per child row, followed by the fixed child columns below. When the input is the output of a `*_read` function (or any relation that exposes a `raw` message column), that `raw` column is passed through too.\n\n| Name | Type | Description |\n| --- | --- | --- |\n| raw | VARCHAR | Passthrough: the parent message text carried from the input relation (present whenever the input exposes a `raw` column). |\n| entry_idx | INTEGER | Ordinal of the Ntry within the statement. |\n| tx_idx | INTEGER | Ordinal of the TxDtls within the entry. |\n| amount | DECIMAL(38,9) | Ntry/Amt. |\n| ccy | VARCHAR | Ntry/Amt/@Ccy. |\n| credit_debit | VARCHAR | Ntry/CdtDbtInd (CRDT/DBIT). |\n| reversal | BOOLEAN | Ntry/RvslInd. |\n| status | VARCHAR | Ntry/Sts (BOOK/PDNG/INFO). |\n| booking_date | DATE | Ntry/BookgDt/Dt (or DtTm). |\n| value_date | DATE | Ntry/ValDt/Dt. |\n| account_servicer_ref | VARCHAR | Ntry/AcctSvcrRef. |\n| bank_tx_domain | VARCHAR | Ntry/BkTxCd/Domn/Cd. |\n| bank_tx_family | VARCHAR | Ntry/BkTxCd/Domn/Fmly/Cd. |\n| bank_tx_subfamily | VARCHAR | Ntry/BkTxCd/Domn/Fmly/SubFmlyCd. |\n| bank_tx_proprietary | VARCHAR | Ntry/BkTxCd/Prtry/Cd. |\n| end_to_end_id | VARCHAR | TxDtls/Refs/EndToEndId. |\n| tx_id | VARCHAR | TxDtls/Refs/TxId. |\n| uetr | VARCHAR | TxDtls/Refs/UETR. |\n| instr_id | VARCHAR | TxDtls/Refs/InstrId. |\n| mandate_id | VARCHAR | TxDtls/Refs/MndtId. |\n| counterparty_name | VARCHAR | Debtor (CRDT) / creditor (DBIT) name. |\n| counterparty_iban | VARCHAR | Counterparty account IBAN. |\n| counterparty_agent_bic | VARCHAR | Counterparty agent BICFI. |\n| remittance_unstructured | VARCHAR[] | TxDtls/RmtInf/Ustrd (repeatable). |\n| remittance_struct_ref | VARCHAR | TxDtls/RmtInf/Strd/CdtrRefInf/Ref. |\n| addtl_entry_info | VARCHAR | Ntry/AddtlNtryInf. |\n",
+        "vgi.title": "Explode camt.053 Entries"
+      },
+      null,
+      [
+        "input",
+        "msg"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "camt053_read",
+      null,
+      "table",
+      "Read camt.053 bank-to-customer statements into rows (one per Stmt).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of ISO 20022 camt.053 (BkToCstmrStmt) XML files into one row per statement: account IBAN, opening/closing/available balances (signed, exact `DECIMAL`), statement period, entry count, and credit/debit summary sums. Use the raw column with camt053_entries(raw) to explode the individual Ntry lines for reconciliation.",
+        "vgi.doc_md": "# Read camt.053 Statements\n\nScan a glob of ISO 20022 camt.053 (BkToCstmrStmt) XML files into one row per statement: account IBAN, opening/closing/available balances (signed, exact `DECIMAL`), statement period, entry count, and credit/debit summary sums. Use the raw column with camt053_entries(raw) to explode the individual Ntry lines for reconciliation.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline camt.053 bank-to-customer statement header: account, closing balance, and how many booked entries it carries.\",\"sql\":\"SELECT msg_id, account_iban, account_ccy, closing_balance, entry_count FROM iso20022.main.camt053_read('<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.08\\\"><BkToCstmrStmt><GrpHdr><MsgId>CAMT053-1</MsgId><CreDtTm>2026-01-03T06:00:00Z</CreDtTm></GrpHdr><Stmt><Id>STMT-1</Id><ElctrncSeqNb>5</ElctrncSeqNb><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy><Ownr><Nm>ACME CORP</Nm></Ownr></Acct><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy=\\\"EUR\\\">1500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy=\\\"EUR\\\">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-01-02</Dt></BookgDt><ValDt><Dt>2026-01-02</Dt></ValDt><NtryDtls><TxDtls><Refs><EndToEndId>E2E-REF-001</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>') WHERE account_iban IS NOT NULL\"}]",
+        "vgi.keywords": "[\"camt.053\",\"camt053\",\"BkToCstmrStmt\",\"bank statement\",\"opening balance\",\"closing balance\",\"iban\",\"reconciliation\",\"iso 20022\",\"statement\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"msg_id\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/MsgId.\"},{\"name\":\"creation_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"GrpHdr/CreDtTm.\"},{\"name\":\"stmt_id\",\"type\":\"VARCHAR\",\"description\":\"Stmt/Id (or Ntfctn/Id for camt.054).\"},{\"name\":\"stmt_seq_nb\",\"type\":\"VARCHAR\",\"description\":\"Stmt/ElctrncSeqNb or LglSeqNb.\"},{\"name\":\"account_iban\",\"type\":\"VARCHAR\",\"description\":\"Acct/Id/IBAN.\"},{\"name\":\"account_other\",\"type\":\"VARCHAR\",\"description\":\"Acct/Id/Othr/Id.\"},{\"name\":\"account_ccy\",\"type\":\"VARCHAR\",\"description\":\"Acct/Ccy.\"},{\"name\":\"account_owner\",\"type\":\"VARCHAR\",\"description\":\"Acct/Ownr/Nm.\"},{\"name\":\"from_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"FrToDt/FrDtTm.\"},{\"name\":\"to_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"FrToDt/ToDtTm.\"},{\"name\":\"opening_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\"OPBD balance (signed by CdtDbtInd).\"},{\"name\":\"closing_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CLBD balance (signed).\"},{\"name\":\"closing_available\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CLAV balance (signed).\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Balance currency (@Ccy).\"},{\"name\":\"entry_count\",\"type\":\"INTEGER\",\"description\":\"Count of Ntry.\"},{\"name\":\"sum_credits\",\"type\":\"DECIMAL(38,9)\",\"description\":\"TxsSummry/TtlCdtNtries/Sum.\"},{\"name\":\"sum_debits\",\"type\":\"DECIMAL(38,9)\",\"description\":\"TxsSummry/TtlDbtNtries/Sum.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole source document.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read camt.053 Statements"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22601,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "camt054_entries",
+      null,
+      "table",
+      "Explode camt.054 notification Ntry rows (one per entry; multi-TxDtls split; input columns passthrough).",
+      null,
+      {
+        "vgi.category": "Statement exploders",
+        "vgi.doc_llm": "Explode the Ntry rows of camt.054 debit/credit notifications into one row per entry \u2014 identical column shape to camt053_entries, so reconciliation queries are portable. Pass a relation whose `raw` column (or the column named by `msg`) holds each notification, typically the output of camt054_read.",
+        "vgi.doc_md": "# Explode camt.054 Entries\n\nExplode the Ntry rows of camt.054 debit/credit notifications into one row per entry \u2014 identical column shape to camt053_entries, so reconciliation queries are portable. Pass a relation whose `raw` column (or the column named by `msg`) holds each notification, typically the output of camt054_read.\n\n## Calling it\n\nThis is a table-in-out function: pass the relation to explode as a subquery, e.g. `camt054_entries((SELECT raw FROM <reader>('\u2026')))`, or feed it any relation that exposes a `raw` message column (rename it with `msg := 'col'`). Every input column is passed through unchanged, repeated once per child row, so results correlate back to the parent.\n\n## Result schema\n\nThe passthrough input columns come first, followed by the fixed child columns \u2014 their names, types, and meanings are documented in `vgi.result_dynamic_columns_md`, and a runnable call is in `vgi.executable_examples`. Local-only \u2014 no network, no egress.",
+        "vgi.executable_examples": "[{\"description\":\"Explode the entries of an inline camt.054 notification.\",\"sql\":\"SELECT amount, credit_debit, end_to_end_id FROM iso20022.main.camt054_entries((SELECT '<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:camt.054.001.08\\\"><BkToCstmrDbtCdtNtfctn><Ntfctn><Id>N</Id><Ntry><Amt Ccy=\\\"EUR\\\">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><NtryDtls><TxDtls><Refs><EndToEndId>E2E</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>' AS raw))\"}]",
+        "vgi.keywords": "[\"camt.054\",\"entries\",\"ntry\",\"notification\",\"debit credit advice\",\"reconciliation\",\"counterparty\",\"passthrough\",\"iso 20022\"]",
+        "vgi.result_dynamic_columns_md": "The result schema is **dynamic**: every column of the input relation you pass is returned first, unchanged and repeated once per child row, followed by the fixed child columns below. When the input is the output of a `*_read` function (or any relation that exposes a `raw` message column), that `raw` column is passed through too.\n\n| Name | Type | Description |\n| --- | --- | --- |\n| raw | VARCHAR | Passthrough: the parent message text carried from the input relation (present whenever the input exposes a `raw` column). |\n| entry_idx | INTEGER | Ordinal of the Ntry within the statement. |\n| tx_idx | INTEGER | Ordinal of the TxDtls within the entry. |\n| amount | DECIMAL(38,9) | Ntry/Amt. |\n| ccy | VARCHAR | Ntry/Amt/@Ccy. |\n| credit_debit | VARCHAR | Ntry/CdtDbtInd (CRDT/DBIT). |\n| reversal | BOOLEAN | Ntry/RvslInd. |\n| status | VARCHAR | Ntry/Sts (BOOK/PDNG/INFO). |\n| booking_date | DATE | Ntry/BookgDt/Dt (or DtTm). |\n| value_date | DATE | Ntry/ValDt/Dt. |\n| account_servicer_ref | VARCHAR | Ntry/AcctSvcrRef. |\n| bank_tx_domain | VARCHAR | Ntry/BkTxCd/Domn/Cd. |\n| bank_tx_family | VARCHAR | Ntry/BkTxCd/Domn/Fmly/Cd. |\n| bank_tx_subfamily | VARCHAR | Ntry/BkTxCd/Domn/Fmly/SubFmlyCd. |\n| bank_tx_proprietary | VARCHAR | Ntry/BkTxCd/Prtry/Cd. |\n| end_to_end_id | VARCHAR | TxDtls/Refs/EndToEndId. |\n| tx_id | VARCHAR | TxDtls/Refs/TxId. |\n| uetr | VARCHAR | TxDtls/Refs/UETR. |\n| instr_id | VARCHAR | TxDtls/Refs/InstrId. |\n| mandate_id | VARCHAR | TxDtls/Refs/MndtId. |\n| counterparty_name | VARCHAR | Debtor (CRDT) / creditor (DBIT) name. |\n| counterparty_iban | VARCHAR | Counterparty account IBAN. |\n| counterparty_agent_bic | VARCHAR | Counterparty agent BICFI. |\n| remittance_unstructured | VARCHAR[] | TxDtls/RmtInf/Ustrd (repeatable). |\n| remittance_struct_ref | VARCHAR | TxDtls/RmtInf/Strd/CdtrRefInf/Ref. |\n| addtl_entry_info | VARCHAR | Ntry/AddtlNtryInf. |\n",
+        "vgi.title": "Explode camt.054 Entries"
+      },
+      null,
+      [
+        "input",
+        "msg"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22602,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "camt054_read",
+      null,
+      "table",
+      "Read camt.054 debit/credit notifications into rows (one per Ntfctn).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of ISO 20022 camt.054 (BkToCstmrDbtCdtNtfctn) XML files into one row per notification, sharing the camt.053 statement column layout (account, period, balances when present, entry count). Pair with camt054_entries(raw) to explode the individual Ntry advice lines \u2014 identical in shape to camt053_entries.",
+        "vgi.doc_md": "# Read camt.054 Debit/Credit Notifications\n\nScan a glob of ISO 20022 camt.054 (BkToCstmrDbtCdtNtfctn) XML files into one row per notification, sharing the camt.053 statement column layout (account, period, balances when present, entry count). Pair with camt054_entries(raw) to explode the individual Ntry advice lines \u2014 identical in shape to camt053_entries.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline camt.054 debit/credit notification header: account, currency, and how many advice entries it carries.\",\"sql\":\"SELECT msg_id, account_iban, account_ccy, entry_count FROM iso20022.main.camt054_read('<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:camt.054.001.08\\\"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-1</MsgId><CreDtTm>2026-01-03T06:30:00Z</CreDtTm></GrpHdr><Ntfctn><Id>NTF-1</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy></Acct><Ntry><Amt Ccy=\\\"EUR\\\">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-DEBIT-9</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>') WHERE account_iban IS NOT NULL\"}]",
+        "vgi.keywords": "[\"camt.054\",\"camt054\",\"BkToCstmrDbtCdtNtfctn\",\"notification\",\"debit credit advice\",\"iso 20022\",\"entries\",\"reconciliation\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"msg_id\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/MsgId.\"},{\"name\":\"creation_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"GrpHdr/CreDtTm.\"},{\"name\":\"stmt_id\",\"type\":\"VARCHAR\",\"description\":\"Stmt/Id (or Ntfctn/Id for camt.054).\"},{\"name\":\"stmt_seq_nb\",\"type\":\"VARCHAR\",\"description\":\"Stmt/ElctrncSeqNb or LglSeqNb.\"},{\"name\":\"account_iban\",\"type\":\"VARCHAR\",\"description\":\"Acct/Id/IBAN.\"},{\"name\":\"account_other\",\"type\":\"VARCHAR\",\"description\":\"Acct/Id/Othr/Id.\"},{\"name\":\"account_ccy\",\"type\":\"VARCHAR\",\"description\":\"Acct/Ccy.\"},{\"name\":\"account_owner\",\"type\":\"VARCHAR\",\"description\":\"Acct/Ownr/Nm.\"},{\"name\":\"from_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"FrToDt/FrDtTm.\"},{\"name\":\"to_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"FrToDt/ToDtTm.\"},{\"name\":\"opening_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\"OPBD balance (signed by CdtDbtInd).\"},{\"name\":\"closing_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CLBD balance (signed).\"},{\"name\":\"closing_available\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CLAV balance (signed).\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Balance currency (@Ccy).\"},{\"name\":\"entry_count\",\"type\":\"INTEGER\",\"description\":\"Count of Ntry.\"},{\"name\":\"sum_credits\",\"type\":\"DECIMAL(38,9)\",\"description\":\"TxsSummry/TtlCdtNtries/Sum.\"},{\"name\":\"sum_debits\",\"type\":\"DECIMAL(38,9)\",\"description\":\"TxsSummry/TtlDbtNtries/Sum.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole source document.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read camt.054 Debit/Credit Notifications"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22603,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "iso20022_mt103_amount",
+      null,
+      "scalar",
+      "Return the :32A: interbank settled amount as DECIMAL(38,9)",
+      null,
+      {
+        "vgi.category": "Message inspection",
+        "vgi.doc_llm": "Return the interbank settled amount of an MT103/MT202 message \u2014 the `:32A:` amount \u2014 as an exact `DECIMAL(38,9)` (comma decimal separator normalized, never a float). Returns NULL when `:32A:` is absent or unparseable. The message argument is inline text, a file path, or `BLOB` bytes.",
+        "vgi.doc_md": "The exact `:32A:` settled amount of an MT message as `DECIMAL(38,9)`: `iso20022_mt103_amount(raw)`.",
+        "vgi.example_queries": "[{\"description\":\"Read the exact :32A: interbank settled amount of an inline MT103.\",\"sql\":\"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\\n:20:R\\n:32A:260101EUR1234,56\\n-}');\"}]",
+        "vgi.executable_examples": "[{\"description\":\"Exact :32A: amount.\",\"sql\":\"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\\n:20:R\\n:32A:260101EUR1234,56\\n-}') AS amount\"}]",
+        "vgi.keywords": "[\"mt amount\",\"32A\",\"settled amount\",\"decimal\",\"exact money\",\"mt103\",\"interbank settlement\"]",
+        "vgi.title": "MT103 Settled Amount"
+      },
+      "DECIMAL(38,9)",
+      [
+        "message"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22596,
+      [
+        "SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "iso20022_mt103_field",
+      null,
+      "scalar",
+      "Return the raw text of an MT field by tag (newline-joined if repeatable)",
+      null,
+      {
+        "vgi.category": "Message inspection",
+        "vgi.doc_llm": "Return the raw text of any SWIFT MT field by its tag (e.g. '50K', '59', '71F', '32A') from a message's block 4. Repeatable tags (e.g. '71F') are joined with a newline. A bare numeric prefix like '50' matches whichever option variant is present (50A/50F/50K). Returns NULL when the tag is absent or the message is unparseable. Works on any MT type despite the name; the message argument is inline text, a file path, or `BLOB` bytes.",
+        "vgi.doc_md": "Raw text of an MT field by tag: `iso20022_mt103_field(raw, '50K')`. Repeatable tags are newline-joined; missing tag -> NULL.",
+        "vgi.example_queries": "[{\"description\":\"Read the raw :59: beneficiary field from an inline MT103.\",\"sql\":\"SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\\n:20:R\\n:59:/123\\nBENE\\n-}', '59');\"}]",
+        "vgi.executable_examples": "[{\"description\":\"Read the :50K: ordering customer.\",\"sql\":\"SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\\n:20:R\\n:50K:/123\\nACME CORP\\n-}', '50K') AS ordering_customer\"}]",
+        "vgi.keywords": "[\"mt field\",\"swift tag\",\"50K\",\"59\",\"71F\",\"32A\",\"raw field\",\"block 4\",\"extract tag\",\"ordering customer\"]",
+        "vgi.title": "Read an MT Field by Tag"
+      },
+      "VARCHAR",
+      [
+        "message",
+        "tag"
+      ],
+      [
+        "ANY",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22597,
+      [
+        "SELECT iso20022.main.iso20022_mt103_field('{1:F01X}{2:I103X}{4:\n:20:R\n:59:/123\nBENE\n-}', '59');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "iso20022_mt_type",
+      null,
+      "scalar",
+      "Detect a SWIFT MT message's type label (NULL for MX/unknown)",
+      null,
+      {
+        "vgi.category": "Message inspection",
+        "vgi.doc_llm": "Detect the SWIFT MT message type of a raw payment message and return its label (e.g. 'MT103', 'MT202', 'MT940', 'MT942'), reading the block-2 application header. Returns NULL when the input is an ISO 20022 MX (XML) message or is not a recognizable MT message. The message argument holds the message text inline, is a path to a message file on the worker host, or is the raw message `BLOB` bytes.",
+        "vgi.doc_md": "Return the SWIFT MT type label of a message, e.g. `iso20022_mt_type(raw)` -> 'MT103'; NULL for MX/unknown input. Accepts inline text, a file path, or `BLOB` bytes.",
+        "vgi.example_queries": "[{\"description\":\"Sniff the SWIFT MT type label of an inline FIN message (NULL for MX/unknown).\",\"sql\":\"SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103DEUTDEFFXXXXN}{4:\\n:20:R\\n-}');\"}]",
+        "vgi.executable_examples": "[{\"description\":\"Sniff an inline MT103.\",\"sql\":\"SELECT iso20022.main.iso20022_mt_type('{1:F01BANKBEBBAXXX0000000000}{2:I103DEUTDEFFXXXXN}{4:\\n:20:R\\n:32A:260101EUR1,00\\n-}') AS mt\"}]",
+        "vgi.keywords": "[\"mt type\",\"swift mt\",\"sniff\",\"detect message type\",\"mt103\",\"mt202\",\"mt940\",\"mt942\",\"message kind\"]",
+        "vgi.title": "Sniff SWIFT MT Type"
+      },
+      "VARCHAR",
+      [
+        "message"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22598,
+      [
+        "SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103DEUTDEFFXXXXN}{4:\n:20:R\n-}');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "iso20022_validate",
+      null,
+      "scalar",
+      "Validate an MT/MX message: STRUCT(ok BOOLEAN, errors VARCHAR[])",
+      null,
+      {
+        "vgi.category": "Message inspection",
+        "vgi.doc_llm": "Validate a SWIFT MT or ISO 20022 MX payment message and return a `STRUCT(ok BOOLEAN, errors VARCHAR[])`. It auto-detects the family and message type, then runs structural checks (balanced MT blocks / well-formed MX, mandatory tags & elements present) plus selected CBPR+ SR2025 field rules: BIC format, IBAN mod-97 checksum, ISO 4217 currency and minor-unit consistency, charge-bearer code sets, and UETR `UUID` shape. `ok` is true iff `errors` is empty; each error is a stable 'CODE: text' string you can unnest or list_contains. This is structural + field-level validation, NOT full CBPR+/HVPS+ network validation. The message argument is inline text, a file path, or `BLOB` bytes.",
+        "vgi.doc_md": "Validate an MT/MX message -> `STRUCT(ok BOOLEAN, errors VARCHAR[])` (structural + IBAN/BIC/currency/charge-bearer/UETR field rules). `ok` is true iff `errors` is empty.",
+        "vgi.example_queries": "[{\"description\":\"Validate an inline MT103 message and read the ok flag.\",\"sql\":\"SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\\n:20:R\\n:32A:260101EUR1,00\\n-}')).ok;\"}]",
+        "vgi.executable_examples": "[{\"description\":\"Validate an inline MT103.\",\"sql\":\"SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\\n:20:R\\n:23B:CRED\\n:32A:260101EUR1,00\\n:50K:/DE89370400440532013000\\nACME\\n:59:/FR1420041010050500013M02606\\nWIDGETS\\n:71A:SHA\\n-}')).ok AS ok\"}]",
+        "vgi.keywords": "[\"validate\",\"validation\",\"iso 20022 validate\",\"cbpr+\",\"iban checksum\",\"bic format\",\"currency\",\"charge bearer\",\"uetr\",\"structural check\",\"mandatory fields\",\"sr2025\"]",
+        "vgi.title": "Validate a Payment Message"
+      },
+      "STRUCT(ok BOOLEAN, errors VARCHAR[])",
+      [
+        "message"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22599,
+      [
+        "SELECT (iso20022.main.iso20022_validate('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1,00\n-}')).ok;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt103_read",
+      null,
+      "table",
+      "Read SWIFT MT103 single customer credit transfers into rows (one per message).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of SWIFT MT103 (single customer credit transfer) text files into one row per message: ordering customer and beneficiary (name/account/BIC), the exact :32A: settled amount and currency, instructed amount, charges, remittance info, the derived end-to-end id, and the block-3 UETR. Use it for payment ingestion and MT103<->pacs.008 migration-QA joins.",
+        "vgi.doc_md": "# Read MT103 Credit Transfers\n\nScan a glob of SWIFT MT103 (single customer credit transfer) text files into one row per message: ordering customer and beneficiary (name/account/BIC), the exact :32A: settled amount and currency, instructed amount, charges, remittance info, the derived end-to-end id, and the block-3 UETR. Use it for payment ingestion and MT103<->pacs.008 migration-QA joins.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline MT103 credit transfer and read its exact settled amount, currency, and parties.\",\"sql\":\"SELECT senders_ref, value_date, ccy, amount, beneficiary FROM iso20022.main.mt103_read('{1:F01ACMEDEFFAXXX0000000000}{2:I103DEUTDEFFXXXXN}{3:{121:e3bf1c2a-1111-4aaa-8bbb-1234567890ab}}{4:\\n:20:TXN-REF-1\\n:23B:CRED\\n:32A:260101EUR1234,56\\n:50K:/DE89370400440532013000\\nACME CORP\\n:59:/FR1420041010050500013M02606\\nWIDGETS SARL\\n:70:INVOICE 998877\\n:71A:SHA\\n:72:/EToE/E2E-REF-001\\n-}') WHERE amount > 1000\"}]",
+        "vgi.keywords": "[\"mt103\",\"swift mt\",\"credit transfer\",\"ordering customer\",\"beneficiary\",\"32A\",\"50K\",\"59\",\"uetr\",\"end to end id\",\"payments\",\"fin\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"senders_ref\",\"type\":\"VARCHAR\",\"description\":\":20: sender's reference.\"},{\"name\":\"bank_op_code\",\"type\":\"VARCHAR\",\"description\":\":23B: bank operation code.\"},{\"name\":\"instruction_codes\",\"type\":\"VARCHAR[]\",\"description\":\":23E: instruction codes (repeatable).\"},{\"name\":\"value_date\",\"type\":\"DATE\",\"description\":\":32A: value date.\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\":32A: currency.\"},{\"name\":\"amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\":32A: interbank settled amount.\"},{\"name\":\"instructed_ccy\",\"type\":\"VARCHAR\",\"description\":\":33B: instructed currency.\"},{\"name\":\"instructed_amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\":33B: instructed amount.\"},{\"name\":\"exchange_rate\",\"type\":\"DECIMAL(38,9)\",\"description\":\":36: exchange rate.\"},{\"name\":\"ordering_customer\",\"type\":\"VARCHAR\",\"description\":\":50A/F/K: name + address.\"},{\"name\":\"ordering_customer_acct\",\"type\":\"VARCHAR\",\"description\":\":50A/F/K: account / IBAN.\"},{\"name\":\"ordering_customer_bic\",\"type\":\"VARCHAR\",\"description\":\":50A: BIC.\"},{\"name\":\"ordering_institution\",\"type\":\"VARCHAR\",\"description\":\":52A/D:.\"},{\"name\":\"senders_correspondent\",\"type\":\"VARCHAR\",\"description\":\":53A/B/D:.\"},{\"name\":\"receivers_correspondent\",\"type\":\"VARCHAR\",\"description\":\":54A/B/D:.\"},{\"name\":\"third_reimbursement_inst\",\"type\":\"VARCHAR\",\"description\":\":55A/B/D:.\"},{\"name\":\"intermediary_inst\",\"type\":\"VARCHAR\",\"description\":\":56A/C/D:.\"},{\"name\":\"account_with_inst\",\"type\":\"VARCHAR\",\"description\":\":57A/B/C/D:.\"},{\"name\":\"beneficiary\",\"type\":\"VARCHAR\",\"description\":\":59/59A/59F: name + address.\"},{\"name\":\"beneficiary_acct\",\"type\":\"VARCHAR\",\"description\":\":59\u2026: account / IBAN.\"},{\"name\":\"beneficiary_bic\",\"type\":\"VARCHAR\",\"description\":\":59A: BIC.\"},{\"name\":\"remittance_info\",\"type\":\"VARCHAR\",\"description\":\":70: remittance information.\"},{\"name\":\"details_of_charges\",\"type\":\"VARCHAR\",\"description\":\":71A: OUR/SHA/BEN.\"},{\"name\":\"senders_charges\",\"type\":\"VARCHAR[]\",\"description\":\":71F: sender's charges (repeatable).\"},{\"name\":\"receivers_charges\",\"type\":\"VARCHAR\",\"description\":\":71G: receiver's charges.\"},{\"name\":\"sender_to_receiver_info\",\"type\":\"VARCHAR\",\"description\":\":72:.\"},{\"name\":\"end_to_end_id\",\"type\":\"VARCHAR\",\"description\":\"Derived end-to-end id (:72: token / UETR).\"},{\"name\":\"uetr\",\"type\":\"VARCHAR\",\"description\":\"Block-3 {121:} UETR.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole message.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read MT103 Credit Transfers"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22604,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt202_read",
+      null,
+      "table",
+      "Read SWIFT MT202 / MT202 COV financial-institution transfers into rows.",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of SWIFT MT202 / MT202 COV (general financial-institution transfer) text files into one row per message: references, value date, amount and currency, the institution chain, and \u2014 for cover messages \u2014 the underlying customer block (is_cover, cov_ordering_customer, cov_beneficiary, cov_remittance_info).",
+        "vgi.doc_md": "# Read MT202 / MT202 COV FI Transfers\n\nScan a glob of SWIFT MT202 / MT202 COV (general financial-institution transfer) text files into one row per message: references, value date, amount and currency, the institution chain, and \u2014 for cover messages \u2014 the underlying customer block (is_cover, cov_ordering_customer, cov_beneficiary, cov_remittance_info).\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline MT202 (general financial institution transfer / cover) and read its settled amount and beneficiary institution.\",\"sql\":\"SELECT transaction_ref, related_ref, ccy, amount, beneficiary_inst FROM iso20022.main.mt202_read('{1:F01ACMEDEFFAXXX0000000000}{2:I202DEUTDEFFXXXXN}{3:{121:11111111-2222-4333-8444-555566667777}}{4:\\n:20:FI-REF-9\\n:21:REL-REF-9\\n:32A:260102USD5000000,00\\n:52A:CHASUS33\\n:58A:DEUTDEFF\\n:50K:/111\\nUNDERLYING DEBTOR\\n:59:/222\\nUNDERLYING CREDITOR\\n:70:COVER FOR MT103\\n-}') WHERE amount > 1000000\"}]",
+        "vgi.keywords": "[\"mt202\",\"mt202 cov\",\"swift mt\",\"fi transfer\",\"cover payment\",\"correspondent banking\",\"beneficiary institution\",\"uetr\",\"fin\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"transaction_ref\",\"type\":\"VARCHAR\",\"description\":\":20:.\"},{\"name\":\"related_ref\",\"type\":\"VARCHAR\",\"description\":\":21:.\"},{\"name\":\"value_date\",\"type\":\"DATE\",\"description\":\":32A: date.\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\":32A: currency.\"},{\"name\":\"amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\":32A: amount.\"},{\"name\":\"ordering_institution\",\"type\":\"VARCHAR\",\"description\":\":52A/D:.\"},{\"name\":\"senders_correspondent\",\"type\":\"VARCHAR\",\"description\":\":53A/B/D:.\"},{\"name\":\"receivers_correspondent\",\"type\":\"VARCHAR\",\"description\":\":54A/B/D:.\"},{\"name\":\"intermediary\",\"type\":\"VARCHAR\",\"description\":\":56A/D:.\"},{\"name\":\"account_with_inst\",\"type\":\"VARCHAR\",\"description\":\":57A/B/D:.\"},{\"name\":\"beneficiary_inst\",\"type\":\"VARCHAR\",\"description\":\":58A/D:.\"},{\"name\":\"sender_to_receiver_info\",\"type\":\"VARCHAR\",\"description\":\":72:.\"},{\"name\":\"is_cover\",\"type\":\"BOOLEAN\",\"description\":\"True when an underlying customer (COV) block is present.\"},{\"name\":\"cov_ordering_customer\",\"type\":\"VARCHAR\",\"description\":\"COV :50A/F/K:.\"},{\"name\":\"cov_beneficiary\",\"type\":\"VARCHAR\",\"description\":\"COV :59/59A/59F:.\"},{\"name\":\"cov_remittance_info\",\"type\":\"VARCHAR\",\"description\":\"COV :70:.\"},{\"name\":\"uetr\",\"type\":\"VARCHAR\",\"description\":\"Block-3 {121:} UETR.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole message.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read MT202 / MT202 COV FI Transfers"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22605,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt940_lines",
+      null,
+      "table",
+      "Explode MT940 :61: statement lines (one per line, joined to :86:; input columns passthrough).",
+      null,
+      {
+        "vgi.category": "Statement exploders",
+        "vgi.doc_llm": "Explode the :61: statement lines of one or more MT940 end-of-day statements \u2014 each :61: line joined to its following :86: narrative \u2014 into one row per line. Pass a relation whose `raw` column (or the column named by `msg :=`) holds each statement: for example the output of `mt940_read('\u2026')`, or any relation exposing a `raw` message column, or an inline statement. Every input column is passed through, repeated once per child line, so lines correlate back to their parent statement. Each output line carries `line_idx`, `value_date` and `entry_date` (`DATE`), the `credit_debit` mark (C/D/RC/RD), positive `amount` `DECIMAL(38,9)`, `transaction_type_id` (e.g. NTRF/NMSC), `customer_ref`/`bank_ref`, the flattened `narrative`, and `narrative_struct` `MAP(VARCHAR, VARCHAR)` for structured `?NN`/`>NN` narratives.",
+        "vgi.doc_md": "# Explode MT940 Statement Lines\n\nExplode the :61: statement lines of one or more MT940 end-of-day statements \u2014 each :61: line joined to its following :86: narrative \u2014 into one row per line. Pass a relation whose `raw` column (or the column named by `msg :=`) holds each statement: for example the output of `mt940_read('\u2026')`, or any relation exposing a `raw` message column, or an inline statement. Every input column is passed through, repeated once per child line, so lines correlate back to their parent statement. Each output line carries `line_idx`, `value_date` and `entry_date` (`DATE`), the `credit_debit` mark (C/D/RC/RD), positive `amount` `DECIMAL(38,9)`, `transaction_type_id` (e.g. NTRF/NMSC), `customer_ref`/`bank_ref`, the flattened `narrative`, and `narrative_struct` `MAP(VARCHAR, VARCHAR)` for structured `?NN`/`>NN` narratives.\n\n## Calling it\n\nThis is a table-in-out function: pass the relation to explode as a subquery, e.g. `mt940_lines((SELECT raw FROM <reader>('\u2026')))`, or feed it any relation that exposes a `raw` message column (rename it with `msg := 'col'`). Every input column is passed through unchanged, repeated once per child row, so results correlate back to the parent.\n\n## Result schema\n\nThe passthrough input columns come first, followed by the fixed child columns \u2014 their names, types, and meanings are documented in `vgi.result_dynamic_columns_md`, and a runnable call is in `vgi.executable_examples`. Local-only \u2014 no network, no egress.",
+        "vgi.executable_examples": "[{\"description\":\"Read an MT940 statement inline, then explode its :61: lines (one row per line, joined to its :86: narrative).\",\"sql\":\"SELECT value_date, credit_debit, amount, transaction_type_id FROM iso20022.main.mt940_lines((SELECT raw FROM iso20022.main.mt940_read('{1:F01ACMEDEFFAXXX0000000000}{2:O940DEUTDEFFXXXXN}{4:\\n:20:STMT-1\\n:25:DE89370400440532013000\\n:28C:12345/1\\n:60F:C260101EUR1000,00\\n:61:2601020102C500,00NTRFNONREF//BANK-A\\n:86:GROCERY STORE PAYMENT\\n:61:2601030103D250,50NMSCCUST-REF//BANK-B\\n:86:RENT\\n:62F:C260103EUR1249,50\\n-}')))\"}]",
+        "vgi.keywords": "[\"mt940\",\"statement lines\",\"61\",\"86\",\"narrative\",\"credit debit\",\"transaction type\",\"reconciliation\",\"passthrough\",\"fin\"]",
+        "vgi.result_dynamic_columns_md": "The result schema is **dynamic**: every column of the input relation you pass is returned first, unchanged and repeated once per child row, followed by the fixed child columns below. When the input is the output of a `*_read` function (or any relation that exposes a `raw` message column), that `raw` column is passed through too.\n\n| Name | Type | Description |\n| --- | --- | --- |\n| raw | VARCHAR | Passthrough: the parent message text carried from the input relation (present whenever the input exposes a `raw` column). |\n| line_idx | INTEGER | Ordinal within the statement. |\n| value_date | DATE | :61: subfield 1 (YYMMDD). |\n| entry_date | DATE | :61: subfield 2 (MMDD; year from value_date). |\n| credit_debit | VARCHAR | :61: subfield 3 mark: C/D/RC/RD. |\n| funds_code | VARCHAR | :61: subfield 3 funds code. |\n| amount | DECIMAL(38,9) | :61: subfield 4 (positive; sign via credit_debit). |\n| transaction_type_id | VARCHAR | :61: subfield 5 (e.g. NTRF, NMSC). |\n| customer_ref | VARCHAR | :61: subfield 6 up to //. |\n| bank_ref | VARCHAR | :61: subfield 6 after //. |\n| supplementary | VARCHAR | :61: subfield 7. |\n| narrative | VARCHAR | :86: flattened (continuations joined). |\n| narrative_struct | MAP(VARCHAR, VARCHAR) | :86: structured ?NN/>NN subfields. |\n",
+        "vgi.title": "Explode MT940 Statement Lines"
+      },
+      null,
+      [
+        "input",
+        "msg"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22606,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt940_read",
+      null,
+      "table",
+      "Read SWIFT MT940 customer statements into rows (one per statement).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of SWIFT MT940 (customer statement) text files into one row per statement (a file may hold several; statement_idx orders them). Columns include the account, statement/sequence numbers, signed opening and closing balances with their dates, and the line count. Use the raw column with mt940_lines(raw) to explode the :61: statement lines for reconciliation.",
+        "vgi.doc_md": "# Read MT940 Statements\n\nScan a glob of SWIFT MT940 (customer statement) text files into one row per statement (a file may hold several; statement_idx orders them). Columns include the account, statement/sequence numbers, signed opening and closing balances with their dates, and the line count. Use the raw column with mt940_lines(raw) to explode the :61: statement lines for reconciliation.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline MT940 end-of-day statement header: account, currency, closing balance, and the number of statement lines.\",\"sql\":\"SELECT transaction_ref, account, ccy, closing_balance, line_count FROM iso20022.main.mt940_read('{1:F01ACMEDEFFAXXX0000000000}{2:O940DEUTDEFFXXXXN}{4:\\n:20:STMT-1\\n:25:DE89370400440532013000\\n:28C:12345/1\\n:60F:C260101EUR1000,00\\n:61:2601020102C500,00NTRFNONREF//BANK-A\\nEXTRA INFO\\n:86:GROCERY STORE PAYMENT\\n:61:2601030103D250,50NMSCCUST-REF//BANK-B\\n:86:?20RENT ?30BANK ?31ACC123\\n:62F:C260103EUR1249,50\\n:64:C260103EUR1249,50\\n-}') WHERE account IS NOT NULL\"}]",
+        "vgi.keywords": "[\"mt940\",\"swift mt\",\"bank statement\",\"opening balance\",\"closing balance\",\"60F\",\"62F\",\"statement lines\",\"reconciliation\",\"fin\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"statement_idx\",\"type\":\"INTEGER\",\"description\":\"0-based ordinal within the file.\"},{\"name\":\"transaction_ref\",\"type\":\"VARCHAR\",\"description\":\":20:.\"},{\"name\":\"related_ref\",\"type\":\"VARCHAR\",\"description\":\":21:.\"},{\"name\":\"account\",\"type\":\"VARCHAR\",\"description\":\":25: account id / IBAN.\"},{\"name\":\"statement_no\",\"type\":\"VARCHAR\",\"description\":\":28C: statement number.\"},{\"name\":\"sequence_no\",\"type\":\"VARCHAR\",\"description\":\":28C: sequence number.\"},{\"name\":\"opening_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\":60F/M: amount (signed by D/C).\"},{\"name\":\"opening_balance_dc\",\"type\":\"VARCHAR\",\"description\":\":60F/M: D or C.\"},{\"name\":\"opening_balance_date\",\"type\":\"DATE\",\"description\":\":60F/M: date.\"},{\"name\":\"opening_is_intermediate\",\"type\":\"BOOLEAN\",\"description\":\"True for :60M: (vs :60F:).\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Balance currency.\"},{\"name\":\"closing_balance\",\"type\":\"DECIMAL(38,9)\",\"description\":\":62F/M: amount (signed).\"},{\"name\":\"closing_balance_dc\",\"type\":\"VARCHAR\",\"description\":\":62F/M: D or C.\"},{\"name\":\"closing_balance_date\",\"type\":\"DATE\",\"description\":\":62F/M: date.\"},{\"name\":\"closing_available\",\"type\":\"DECIMAL(38,9)\",\"description\":\":64: closing available (signed).\"},{\"name\":\"forward_available\",\"type\":\"DECIMAL(38,9)\",\"description\":\":65: forward available (first; signed).\"},{\"name\":\"line_count\",\"type\":\"INTEGER\",\"description\":\"Count of :61: lines.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"This statement's text.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read MT940 Statements"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22607,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt942_lines",
+      null,
+      "table",
+      "Explode MT942 :61: report lines (one per line, joined to :86:; input columns passthrough).",
+      null,
+      {
+        "vgi.category": "Statement exploders",
+        "vgi.doc_llm": "Explode the :61: lines of one or more MT942 interim (intra-day) reports \u2014 each :61: line joined to its following :86: narrative \u2014 into one row per line. Identical column shape to mt940_lines (`line_idx`, `value_date`/`entry_date`, `credit_debit`, positive `amount` `DECIMAL(38,9)`, `transaction_type_id`, references, flattened `narrative`, and `narrative_struct` `MAP`), with every input column passed through so lines correlate back to their parent report. Pass a relation whose `raw` column (or the column named by `msg :=`) holds each report: for example the output of `mt942_read('\u2026')`, or an inline report.",
+        "vgi.doc_md": "# Explode MT942 Report Lines\n\nExplode the :61: lines of one or more MT942 interim (intra-day) reports \u2014 each :61: line joined to its following :86: narrative \u2014 into one row per line. Identical column shape to mt940_lines (`line_idx`, `value_date`/`entry_date`, `credit_debit`, positive `amount` `DECIMAL(38,9)`, `transaction_type_id`, references, flattened `narrative`, and `narrative_struct` `MAP`), with every input column passed through so lines correlate back to their parent report. Pass a relation whose `raw` column (or the column named by `msg :=`) holds each report: for example the output of `mt942_read('\u2026')`, or an inline report.\n\n## Calling it\n\nThis is a table-in-out function: pass the relation to explode as a subquery, e.g. `mt942_lines((SELECT raw FROM <reader>('\u2026')))`, or feed it any relation that exposes a `raw` message column (rename it with `msg := 'col'`). Every input column is passed through unchanged, repeated once per child row, so results correlate back to the parent.\n\n## Result schema\n\nThe passthrough input columns come first, followed by the fixed child columns \u2014 their names, types, and meanings are documented in `vgi.result_dynamic_columns_md`, and a runnable call is in `vgi.executable_examples`. Local-only \u2014 no network, no egress.",
+        "vgi.executable_examples": "[{\"description\":\"Read an MT942 interim report inline, then explode its :61: lines.\",\"sql\":\"SELECT value_date, credit_debit, amount FROM iso20022.main.mt942_lines((SELECT raw FROM iso20022.main.mt942_read('{1:F01ACMEDEFFAXXX0000000000}{2:O942DEUTDEFFXXXXN}{4:\\n:20:INTERIM-1\\n:25:DE89370400440532013000\\n:28C:99/1\\n:34F:EURD0,00\\n:34F:EURC1000,00\\n:61:2601020102C500,00NTRFNONREF//BANK-A\\n:86:INCOMING\\n-}')))\"}]",
+        "vgi.keywords": "[\"mt942\",\"interim report\",\"statement lines\",\"61\",\"86\",\"narrative\",\"intraday\",\"reconciliation\",\"passthrough\",\"fin\"]",
+        "vgi.result_dynamic_columns_md": "The result schema is **dynamic**: every column of the input relation you pass is returned first, unchanged and repeated once per child row, followed by the fixed child columns below. When the input is the output of a `*_read` function (or any relation that exposes a `raw` message column), that `raw` column is passed through too.\n\n| Name | Type | Description |\n| --- | --- | --- |\n| raw | VARCHAR | Passthrough: the parent message text carried from the input relation (present whenever the input exposes a `raw` column). |\n| line_idx | INTEGER | Ordinal within the statement. |\n| value_date | DATE | :61: subfield 1 (YYMMDD). |\n| entry_date | DATE | :61: subfield 2 (MMDD; year from value_date). |\n| credit_debit | VARCHAR | :61: subfield 3 mark: C/D/RC/RD. |\n| funds_code | VARCHAR | :61: subfield 3 funds code. |\n| amount | DECIMAL(38,9) | :61: subfield 4 (positive; sign via credit_debit). |\n| transaction_type_id | VARCHAR | :61: subfield 5 (e.g. NTRF, NMSC). |\n| customer_ref | VARCHAR | :61: subfield 6 up to //. |\n| bank_ref | VARCHAR | :61: subfield 6 after //. |\n| supplementary | VARCHAR | :61: subfield 7. |\n| narrative | VARCHAR | :86: flattened (continuations joined). |\n| narrative_struct | MAP(VARCHAR, VARCHAR) | :86: structured ?NN/>NN subfields. |\n",
+        "vgi.title": "Explode MT942 Report Lines"
+      },
+      null,
+      [
+        "input",
+        "msg"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22608,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "mt942_read",
+      null,
+      "table",
+      "Read SWIFT MT942 interim transaction reports into rows (one per report).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of SWIFT MT942 (interim transaction report) text files into one row per report: floor limits, the datetime indication, debit/credit count and sum summaries, and the line count. Use the raw column with mt942_lines(raw) to explode the :61: lines \u2014 identical in shape to mt940_lines.",
+        "vgi.doc_md": "# Read MT942 Interim Reports\n\nScan a glob of SWIFT MT942 (interim transaction report) text files into one row per report: floor limits, the datetime indication, debit/credit count and sum summaries, and the line count. Use the raw column with mt942_lines(raw) to explode the :61: lines \u2014 identical in shape to mt940_lines.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline MT942 interim (intra-day) statement header: account, currency, and the credit/debit turnover counts.\",\"sql\":\"SELECT transaction_ref, account, ccy, credit_count, credit_sum, debit_count FROM iso20022.main.mt942_read('{1:F01ACMEDEFFAXXX0000000000}{2:O942DEUTDEFFXXXXN}{4:\\n:20:INTERIM-1\\n:25:DE89370400440532013000\\n:28C:99/1\\n:34F:EURD0,00\\n:34F:EURC1000,00\\n:13D:2601021430+0100\\n:61:2601020102C500,00NTRFNONREF//BANK-A\\n:86:INCOMING\\n:90D:5EUR2500,00\\n:90C:3EUR1500,00\\n-}') WHERE account IS NOT NULL\"}]",
+        "vgi.keywords": "[\"mt942\",\"swift mt\",\"interim report\",\"floor limit\",\"34F\",\"90D\",\"90C\",\"intraday\",\"statement lines\",\"fin\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"statement_idx\",\"type\":\"INTEGER\",\"description\":\"0-based ordinal within the file.\"},{\"name\":\"transaction_ref\",\"type\":\"VARCHAR\",\"description\":\":20:.\"},{\"name\":\"related_ref\",\"type\":\"VARCHAR\",\"description\":\":21:.\"},{\"name\":\"account\",\"type\":\"VARCHAR\",\"description\":\":25: account id / IBAN.\"},{\"name\":\"statement_no\",\"type\":\"VARCHAR\",\"description\":\":28C: statement number.\"},{\"name\":\"sequence_no\",\"type\":\"VARCHAR\",\"description\":\":28C: sequence number.\"},{\"name\":\"floor_limit_debit\",\"type\":\"DECIMAL(38,9)\",\"description\":\":34F: debit floor limit.\"},{\"name\":\"floor_limit_credit\",\"type\":\"DECIMAL(38,9)\",\"description\":\":34F: credit floor limit.\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Floor-limit / summary currency.\"},{\"name\":\"datetime_indication\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\":13D: date/time indication.\"},{\"name\":\"debit_count\",\"type\":\"INTEGER\",\"description\":\":90D: debit entry count.\"},{\"name\":\"debit_sum\",\"type\":\"DECIMAL(38,9)\",\"description\":\":90D: debit sum.\"},{\"name\":\"credit_count\",\"type\":\"INTEGER\",\"description\":\":90C: credit entry count.\"},{\"name\":\"credit_sum\",\"type\":\"DECIMAL(38,9)\",\"description\":\":90C: credit sum.\"},{\"name\":\"line_count\",\"type\":\"INTEGER\",\"description\":\"Count of :61: lines.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"This report's text.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read MT942 Interim Reports"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22609,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "pacs002_read",
+      null,
+      "table",
+      "Read pacs.002 payment-status reports into rows (one per TxInfAndSts).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of ISO 20022 pacs.002 (FIToFIPmtStsRpt) XML files into one row per TxInfAndSts: the transaction status (ACSC/ACSP/RJCT/PDNG), status reason codes, and original references back to the pacs.008 it answers. Use it to reconcile payment acknowledgements / rejections.",
+        "vgi.doc_md": "# Read pacs.002 Payment Statuses\n\nScan a glob of ISO 20022 pacs.002 (FIToFIPmtStsRpt) XML files into one row per TxInfAndSts: the transaction status (ACSC/ACSP/RJCT/PDNG), status reason codes, and original references back to the pacs.008 it answers. Use it to reconcile payment acknowledgements / rejections.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline pacs.002 payment status report: read the original payment references and the rejection reason down each TxInfAndSts row.\",\"sql\":\"SELECT msg_id, orig_tx_id, orig_uetr, group_status FROM iso20022.main.pacs002_read('<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10\\\"><FIToFIPmtStsRpt><GrpHdr><MsgId>STS-1</MsgId><CreDtTm>2026-01-01T11:00:00Z</CreDtTm></GrpHdr><OrgnlGrpInfAndSts><OrgnlMsgId>PACS-MSG-1</OrgnlMsgId><OrgnlMsgNmId>pacs.008.001.08</OrgnlMsgNmId></OrgnlGrpInfAndSts><TxInfAndSts><OrgnlEndToEndId>E2E-REF-001</OrgnlEndToEndId><OrgnlUETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</OrgnlUETR><TxSts>RJCT</TxSts><StsRsnInf><Rsn><Cd>AM04</Cd></Rsn><AddtlInf>Insufficient funds</AddtlInf></StsRsnInf></TxInfAndSts></FIToFIPmtStsRpt></Document>') WHERE msg_id IS NOT NULL\"}]",
+        "vgi.keywords": "[\"pacs.002\",\"pacs002\",\"FIToFIPmtStsRpt\",\"payment status\",\"ACSC\",\"RJCT\",\"reason code\",\"acknowledgement\",\"rejection\",\"iso 20022\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"msg_id\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/MsgId.\"},{\"name\":\"creation_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"GrpHdr/CreDtTm.\"},{\"name\":\"orig_msg_id\",\"type\":\"VARCHAR\",\"description\":\"OrgnlGrpInfAndSts/OrgnlMsgId.\"},{\"name\":\"orig_msg_name\",\"type\":\"VARCHAR\",\"description\":\"OrgnlGrpInfAndSts/OrgnlMsgNmId.\"},{\"name\":\"group_status\",\"type\":\"VARCHAR\",\"description\":\"OrgnlGrpInfAndSts/GrpSts.\"},{\"name\":\"orig_instr_id\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/OrgnlInstrId.\"},{\"name\":\"orig_end_to_end_id\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/OrgnlEndToEndId.\"},{\"name\":\"orig_tx_id\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/OrgnlTxId.\"},{\"name\":\"orig_uetr\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/OrgnlUETR.\"},{\"name\":\"tx_status\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/TxSts (ACSC/ACSP/RJCT/PDNG\u2026).\"},{\"name\":\"status_reason_code\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/StsRsnInf/Rsn/Cd.\"},{\"name\":\"status_reason_prop\",\"type\":\"VARCHAR\",\"description\":\"TxInfAndSts/StsRsnInf/Rsn/Prtry.\"},{\"name\":\"status_reason_addtl\",\"type\":\"VARCHAR[]\",\"description\":\"TxInfAndSts/StsRsnInf/AddtlInf (repeatable).\"},{\"name\":\"accept_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"TxInfAndSts/AccptncDtTm.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole source document.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read pacs.002 Payment Statuses"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22610,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "pacs008_read",
+      null,
+      "table",
+      "Read pacs.008 customer credit transfers into rows (one per CdtTrfTxInf).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of ISO 20022 pacs.008 (FIToFICstmrCdtTrf) XML files into one row per CdtTrfTxInf, with debtor/creditor names, IBANs, BICs, the exact settled amount and currency, end-to-end id, UETR, charge bearer, purpose, and remittance info. Use it for payment reconciliation and MT103<->pacs.008 migration-QA joins.",
+        "vgi.doc_md": "# Read pacs.008 Credit Transfers\n\nScan a glob of ISO 20022 pacs.008 (FIToFICstmrCdtTrf) XML files into one row per CdtTrfTxInf, with debtor/creditor names, IBANs, BICs, the exact settled amount and currency, end-to-end id, UETR, charge bearer, purpose, and remittance info. Use it for payment reconciliation and MT103<->pacs.008 migration-QA joins.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline pacs.008 FI-to-FI customer credit transfer: read the exact interbank settlement amount, UETR, and parties.\",\"sql\":\"SELECT msg_id, uetr, ccy, instructed_amount, debtor_name, creditor_name FROM iso20022.main.pacs008_read('<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\\\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>PACS-MSG-1</MsgId><CreDtTm>2026-01-01T10:00:00Z</CreDtTm><NbOfTxs>1</NbOfTxs><SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf></GrpHdr><CdtTrfTxInf><PmtId><InstrId>INSTR-1</InstrId><EndToEndId>E2E-REF-001</EndToEndId><UETR>e3bf1c2a-1111-4aaa-8bbb-1234567890ab</UETR></PmtId><IntrBkSttlmAmt Ccy=\\\"EUR\\\">1234.56</IntrBkSttlmAmt><IntrBkSttlmDt>2026-01-01</IntrBkSttlmDt><ChrgBr>SHAR</ChrgBr><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><DbtrAgt><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></DbtrAgt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr><CdtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></CdtrAcct><CdtrAgt><FinInstnId><BICFI>BNPAFRPP</BICFI></FinInstnId></CdtrAgt><Purp><Cd>GDDS</Cd></Purp><RmtInf><Ustrd>INVOICE 998877</Ustrd></RmtInf></CdtTrfTxInf></FIToFICstmrCdtTrf></Document>') WHERE instructed_amount > 1000\"}]",
+        "vgi.keywords": "[\"pacs.008\",\"pacs008\",\"FIToFICstmrCdtTrf\",\"credit transfer\",\"payments\",\"iso 20022\",\"end to end id\",\"uetr\",\"iban\",\"bic\",\"settled amount\",\"reconciliation\",\"cbpr+\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"msg_id\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/MsgId.\"},{\"name\":\"creation_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"GrpHdr/CreDtTm.\"},{\"name\":\"nb_of_txs\",\"type\":\"INTEGER\",\"description\":\"GrpHdr/NbOfTxs.\"},{\"name\":\"settlement_method\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/SttlmInf/SttlmMtd (INDA/INGA/CLRG/COVE).\"},{\"name\":\"instr_id\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/InstrId.\"},{\"name\":\"end_to_end_id\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/EndToEndId.\"},{\"name\":\"tx_id\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/TxId.\"},{\"name\":\"uetr\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/UETR.\"},{\"name\":\"amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\"Interbank settled amount (IntrBkSttlmAmt).\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Settled amount currency (@Ccy).\"},{\"name\":\"settlement_date\",\"type\":\"DATE\",\"description\":\"CdtTrfTxInf/IntrBkSttlmDt.\"},{\"name\":\"instructed_amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CdtTrfTxInf/InstdAmt.\"},{\"name\":\"instructed_ccy\",\"type\":\"VARCHAR\",\"description\":\"Instructed amount currency (@Ccy).\"},{\"name\":\"exchange_rate\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CdtTrfTxInf/XchgRate.\"},{\"name\":\"charge_bearer\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/ChrgBr (DEBT/CRED/SHAR/SLEV).\"},{\"name\":\"debtor_name\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/Dbtr/Nm.\"},{\"name\":\"debtor_iban\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/DbtrAcct/Id/IBAN.\"},{\"name\":\"debtor_acct_other\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/DbtrAcct/Id/Othr/Id.\"},{\"name\":\"debtor_agent_bic\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/DbtrAgt/FinInstnId/BICFI.\"},{\"name\":\"creditor_name\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/Cdtr/Nm.\"},{\"name\":\"creditor_iban\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/CdtrAcct/Id/IBAN.\"},{\"name\":\"creditor_acct_other\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/CdtrAcct/Id/Othr/Id.\"},{\"name\":\"creditor_agent_bic\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/CdtrAgt/FinInstnId/BICFI.\"},{\"name\":\"intermediary_agent1_bic\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/IntrmyAgt1/FinInstnId/BICFI.\"},{\"name\":\"purpose_code\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/Purp/Cd.\"},{\"name\":\"remittance_unstructured\",\"type\":\"VARCHAR[]\",\"description\":\"CdtTrfTxInf/RmtInf/Ustrd (repeatable).\"},{\"name\":\"remittance_struct_ref\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/RmtInf/Strd/CdtrRefInf/Ref.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole source document.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read pacs.008 Credit Transfers"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22611,
+      [],
+      null,
+      []
+    ],
+    [
+      "iso20022",
+      "22592",
+      "main",
+      "pain001_read",
+      null,
+      "table",
+      "Read pain.001 customer credit-transfer initiations into rows (one per CdtTrfTxInf).",
+      null,
+      {
+        "vgi.category": "Message readers",
+        "vgi.doc_llm": "Scan a glob of ISO 20022 pain.001 (CstmrCdtTrfInitn) XML files into one row per CdtTrfTxInf, with the PmtInf debtor block carried down: control sum, requested execution date, debtor/creditor names + IBANs + BICs, amount and currency, end-to-end id, UETR, and remittance info. Use it to ingest outbound payment initiations.",
+        "vgi.doc_md": "# Read pain.001 Credit Initiations\n\nScan a glob of ISO 20022 pain.001 (CstmrCdtTrfInitn) XML files into one row per CdtTrfTxInf, with the PmtInf debtor block carried down: control sum, requested execution date, debtor/creditor names + IBANs + BICs, amount and currency, end-to-end id, UETR, and remittance info. Use it to ingest outbound payment initiations.\n\nThe argument may be the **message text supplied inline** (handy for a single message or an example), a file path, or a glob that scans many files. All reads are local on the worker host \u2014 no network, no egress; payment data never leaves the machine. See the result columns for the full schema.",
+        "vgi.executable_examples": "[{\"description\":\"Parse an inline pain.001 customer credit-transfer initiation: read the debtor, instructed amount, and creditor for each CdtTrfTxInf.\",\"sql\":\"SELECT msg_id, pmt_method, debtor_name, amount, ccy, creditor_name FROM iso20022.main.pain001_read('<Document xmlns=\\\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\\\"><CstmrCdtTrfInitn><GrpHdr><MsgId>PAIN-1</MsgId><CreDtTm>2026-01-01T09:00:00Z</CreDtTm><CtrlSum>1234.56</CtrlSum><InitgPty><Nm>ACME CORP</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>PMT-1</PmtInfId><PmtMtd>TRF</PmtMtd><ReqdExctnDt><Dt>2026-01-02</Dt></ReqdExctnDt><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><DbtrAgt><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></DbtrAgt><CdtTrfTxInf><PmtId><EndToEndId>E2E-REF-001</EndToEndId></PmtId><Amt><InstdAmt Ccy=\\\"EUR\\\">1234.56</InstdAmt></Amt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr><CdtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></CdtrAcct><RmtInf><Ustrd>INVOICE 998877</Ustrd></RmtInf></CdtTrfTxInf></PmtInf></CstmrCdtTrfInitn></Document>') WHERE amount > 1000\"}]",
+        "vgi.keywords": "[\"pain.001\",\"pain001\",\"CstmrCdtTrfInitn\",\"credit initiation\",\"payment initiation\",\"iso 20022\",\"debtor\",\"creditor\",\"iban\",\"requested execution date\",\"ctrl sum\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"msg_id\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/MsgId.\"},{\"name\":\"creation_dt\",\"type\":\"TIMESTAMP WITH TIME ZONE\",\"description\":\"GrpHdr/CreDtTm.\"},{\"name\":\"ctrl_sum\",\"type\":\"DECIMAL(38,9)\",\"description\":\"GrpHdr/CtrlSum.\"},{\"name\":\"initiating_party\",\"type\":\"VARCHAR\",\"description\":\"GrpHdr/InitgPty/Nm.\"},{\"name\":\"pmt_inf_id\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/PmtInfId.\"},{\"name\":\"pmt_method\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/PmtMtd (TRF/TRA/CHK).\"},{\"name\":\"requested_exec_date\",\"type\":\"DATE\",\"description\":\"PmtInf/ReqdExctnDt (or \u2026/Dt).\"},{\"name\":\"debtor_name\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/Dbtr/Nm.\"},{\"name\":\"debtor_iban\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/DbtrAcct/Id/IBAN.\"},{\"name\":\"debtor_agent_bic\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/DbtrAgt/FinInstnId/BICFI.\"},{\"name\":\"charge_bearer\",\"type\":\"VARCHAR\",\"description\":\"PmtInf/ChrgBr.\"},{\"name\":\"end_to_end_id\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/EndToEndId.\"},{\"name\":\"instr_id\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/InstrId.\"},{\"name\":\"uetr\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/PmtId/UETR.\"},{\"name\":\"amount\",\"type\":\"DECIMAL(38,9)\",\"description\":\"CdtTrfTxInf/Amt/InstdAmt.\"},{\"name\":\"ccy\",\"type\":\"VARCHAR\",\"description\":\"Instructed amount currency (@Ccy).\"},{\"name\":\"creditor_name\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/Cdtr/Nm.\"},{\"name\":\"creditor_iban\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/CdtrAcct/Id/IBAN.\"},{\"name\":\"creditor_agent_bic\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/CdtrAgt/FinInstnId/BICFI.\"},{\"name\":\"purpose_code\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/Purp/Cd.\"},{\"name\":\"remittance_unstructured\",\"type\":\"VARCHAR[]\",\"description\":\"CdtTrfTxInf/RmtInf/Ustrd (repeatable).\"},{\"name\":\"remittance_struct_ref\",\"type\":\"VARCHAR\",\"description\":\"CdtTrfTxInf/RmtInf/Strd/CdtrRefInf/Ref.\"},{\"name\":\"raw\",\"type\":\"VARCHAR\",\"description\":\"The whole source document.\"},{\"name\":\"path\",\"type\":\"VARCHAR\",\"description\":\"Source file path.\"}]",
+        "vgi.title": "Read pain.001 Credit Initiations"
+      },
+      null,
+      [
+        "source"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22612,
+      [],
+      null,
+      []
+    ]
+  ]
+}
