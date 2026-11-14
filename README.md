@@ -184,3 +184,7 @@ host.
 
 Part of the [Query.Farm](https://query.farm) VGI ecosystem. Copyright 2026
 Query Farm LLC.
+
+## Notebooks
+
+[Executed statement reconciliation walkthrough](notebooks/README.md).

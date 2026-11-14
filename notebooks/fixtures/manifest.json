@@ -1,0 +1,8 @@
+{
+  "provenance": "Synthetic notebook teaching fixtures, authored locally; no real payment data, no claim of network/XSD validation",
+  "period": "2026-01-02, stated UTC bounds 00:00:00 through 23:59:59 inclusive",
+  "files": {
+    "eur.xml": "5c3d24e4e5fb49e7bf38385b9b22c311b48c18d672779293b90869f09c90f4c1",
+    "usd.xml": "6235b49281884258f2fe4419ae3752f01032afb6672d618e61c3565e534b63a2"
+  }
+}
