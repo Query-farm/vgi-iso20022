@@ -1,0 +1,18 @@
+{
+  "provenance": "Authored synthetic variations of this MIT-licensed repository's golden MT103/pacs008/pacs002 messages; no real payment data or network/XSD validation. Each P1\u2013P6 label is an authored pairing identity; UETRs are unique within each representation. P6 intentionally has different currencies. Status rows are independent observations, not inferred from representation equivalence.",
+  "files": {
+    "mt/P1.txt": "78291b65196b01f410609fd716c449525246ebc4ccb5e69de5f28d4fb6423b38",
+    "mt/P2.txt": "aee0ecb2c186917a37693a68c1a08d5a3bc7d4b3d9b6bb5eae4ce017e6261dd6",
+    "mt/P3.txt": "09f8da1b2fe3a7a8aed7420b0409806ecf734fb14399ea9ab818485061bc3376",
+    "mt/P4.txt": "cab31ef1af47caaaddf61fb94ad55efbd1c0beddd9fac077292c724da77f5fed",
+    "mt/P6.txt": "35fdd67c874c94743d331b6451bb23ae0357f4a769a50fa377e2e1965dc2eb5f",
+    "mx/P1.xml": "ff916193e458d5290ed3e8153512c42b25bba995a191722714749cdfe45ec2af",
+    "mx/P2.xml": "901306c267eb616c693092d1057160a305556bee244d5a77022c09f9a6135f84",
+    "mx/P3.xml": "93e1278ca316ca53578496b5cfd52de226c071e843a1522bc9336532bc05c056",
+    "mx/P5.xml": "ea24d2e2cd851475ebcb77463a321d455b8669838fa930623a2e5ab80e2eef0f",
+    "mx/P6.xml": "158a971086501c2777e8e9080ad4d461959be081a334f2e00c96ceed66dbab4d",
+    "status/P1.xml": "7b7e72c5df728df40ff71710179d9a14d615eb937be7ff276d7caaaaeb2bdfe6",
+    "status/P2.xml": "96ad6caf4f43001234a21b6794dbbbb8b073480f12be3adc1d842f56ed454b7d",
+    "status/P5.xml": "941215f1ee3614f14aa704036f6c5e209e646af8cc2dcc9afe2a73a1596f32f0"
+  }
+}
