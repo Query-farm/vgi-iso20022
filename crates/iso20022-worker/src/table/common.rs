@@ -22,6 +22,9 @@ pub struct ReadTable {
     /// reader is demonstrated on inline message text so the example returns rows
     /// without a data file present (VGI511/VGI906).
     pub executable_examples: &'static str,
+    /// Composed `vgi.example_queries` this object drives (see [`crate::composed`]);
+    /// empty for objects that only appear in examples driven by another object.
+    pub example_queries: &'static [crate::meta::Example],
 }
 
 impl TableFunction for ReadTable {
@@ -54,6 +57,12 @@ impl TableFunction for ReadTable {
             "vgi.executable_examples".into(),
             self.executable_examples.into(),
         ));
+        if !self.example_queries.is_empty() {
+            tags.push((
+                "vgi.example_queries".into(),
+                crate::meta::examples_json(self.example_queries),
+            ));
+        }
         FunctionMetadata {
             description: self.doc_md.to_string(),
             tags,

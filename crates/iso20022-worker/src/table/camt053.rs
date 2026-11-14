@@ -44,13 +44,18 @@ pub fn schema() -> SchemaRef {
         commented("entry_count", DataType::Int32, "Count of Ntry."),
         commented("sum_credits", money_type(), "TxsSummry/TtlCdtNtries/Sum."),
         commented("sum_debits", money_type(), "TxsSummry/TtlDbtNtries/Sum."),
-        commented("raw", DataType::Utf8, "The whole source document."),
+        commented(
+            "raw",
+            DataType::Utf8,
+            "The source document narrowed to this statement (other statements removed), for \
+             the entries exploder.",
+        ),
         commented("path", DataType::Utf8, "Source file path."),
     ]))
 }
 
 /// Build a batch from already-parsed statement/notification headers.
-pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array::RecordBatch {
+pub fn build_rows(path: &str, rows: &[Statement]) -> arrow_array::RecordBatch {
     let s = schema();
     let cols = vec![
         str_col(rows.iter().map(|r| r.msg_id.clone())),
@@ -70,7 +75,7 @@ pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array:
         int_col(rows.iter().map(|r| Some(r.entry_count))),
         dec_col(rows.iter().map(|r| r.sum_credits)),
         dec_col(rows.iter().map(|r| r.sum_debits)),
-        str_col(rows.iter().map(|_| Some(content))),
+        str_col(rows.iter().map(|r| Some(r.raw.as_str()))),
         str_col(rows.iter().map(|_| Some(path))),
     ];
     finish(&s, cols)
@@ -79,7 +84,7 @@ pub fn build_rows(path: &str, content: &str, rows: &[Statement]) -> arrow_array:
 /// Parse one file's camt.053 statements into a batch.
 pub fn build(path: &str, content: &str) -> arrow_array::RecordBatch {
     let rows = iso20022_core::mx::camt053::parse(content);
-    build_rows(path, content, &rows)
+    build_rows(path, &rows)
 }
 
 /// The `camt053_read` table-function descriptor.
@@ -98,6 +103,7 @@ pub fn table() -> ReadTable {
         keywords: "camt.053, camt053, BkToCstmrStmt, bank statement, opening balance, closing \
                    balance, iban, reconciliation, iso 20022, statement",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }
 

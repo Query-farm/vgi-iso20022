@@ -153,6 +153,7 @@ pub fn camt053_entries() -> PerMessageTable {
         keywords: "camt.053, entries, ntry, statement lines, reconciliation, credit debit, \
                    end to end id, counterparty, passthrough, iso 20022",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }
 
@@ -171,6 +172,7 @@ pub fn camt054_entries() -> PerMessageTable {
         keywords: "camt.054, entries, ntry, notification, debit credit advice, reconciliation, \
                    counterparty, passthrough, iso 20022",
         executable_examples: EXAMPLES_054,
+        example_queries: &[],
     }
 }
 

@@ -160,6 +160,10 @@ pub fn table() -> ReadTable {
         keywords: "pacs.008, pacs008, FIToFICstmrCdtTrf, credit transfer, payments, iso 20022, \
                    end to end id, uetr, iban, bic, settled amount, reconciliation, cbpr+",
         executable_examples: EXAMPLES,
+        example_queries: &[
+            crate::composed::MT103_PACS008_EQUIVALENCE,
+            crate::composed::PACS008_STATUS,
+        ],
     }
 }
 

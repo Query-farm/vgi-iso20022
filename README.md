@@ -90,6 +90,14 @@ SELECT path,
        (iso20022.main.iso20022_validate(content)).ok,
        (iso20022.main.iso20022_validate(content)).errors
 FROM read_text('/inbox/**/*.xml');
+
+-- 6) Payment-status reconciliation: which pacs.008 transfers settled and which
+--    were rejected (and why), from the pacs.002 reports that answer them
+SELECT p.end_to_end_id, p.creditor_name, p.amount, p.ccy,
+       s.tx_status, s.status_reason_code
+FROM iso20022.main.pacs008_read('/data/outbound/*.xml') p
+LEFT JOIN iso20022.main.pacs002_read('/data/status/*.xml') s ON s.orig_uetr = p.uetr
+ORDER BY p.end_to_end_id;
 ```
 
 > **Note on the message argument.** Scalars and the `*_entries` / `*_lines`
@@ -120,8 +128,10 @@ FROM read_text('/inbox/**/*.xml');
 The `*_read` table functions stream via VGI's **externalized cursor**
 (`FileGlobCursor { paths, idx, inner_row }`), serializable so DuckDB can suspend /
 resume / parallelize a paginated scan. Every glob table function also carries a
-passthrough `raw` (the original message text) and `path` so the child `*_entries`
-/ `*_lines` functions and provenance joins work. Money is parsed with
+passthrough `raw` (the original message text — for MT940/MT942 and camt.053/054,
+narrowed to that row's statement, so a file holding several statements explodes
+each one's lines/entries exactly once) and `path` so the child `*_entries` /
+`*_lines` functions and provenance joins work. Money is parsed with
 `rust_decimal::Decimal` (never `f64`), so the §4 amount-equality joins are exact.
 
 ### Per-message exploders

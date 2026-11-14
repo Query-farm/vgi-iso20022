@@ -119,5 +119,6 @@ pub fn table() -> ReadTable {
         keywords: "pain.001, pain001, CstmrCdtTrfInitn, credit initiation, payment initiation, \
                    iso 20022, debtor, creditor, iban, requested execution date, ctrl sum",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }

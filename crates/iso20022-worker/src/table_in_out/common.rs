@@ -44,6 +44,9 @@ pub struct PerMessageTable {
     pub doc_md: &'static str,
     pub keywords: &'static str,
     pub executable_examples: &'static str,
+    /// Composed `vgi.example_queries` this object drives (see [`crate::composed`]);
+    /// empty for objects that only appear in examples driven by another object.
+    pub example_queries: &'static [crate::meta::Example],
 }
 
 /// The name of the input column holding the message (default `raw`).
@@ -84,6 +87,12 @@ impl TableInOutFunction for PerMessageTable {
             "vgi.executable_examples".into(),
             self.executable_examples.into(),
         ));
+        if !self.example_queries.is_empty() {
+            tags.push((
+                "vgi.example_queries".into(),
+                crate::meta::examples_json(self.example_queries),
+            ));
+        }
         FunctionMetadata {
             description: self.doc_md.to_string(),
             tags,

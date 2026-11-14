@@ -108,6 +108,7 @@ pub fn mt940_lines() -> PerMessageTable {
         keywords: "mt940, statement lines, 61, 86, narrative, credit debit, transaction type, \
                    reconciliation, passthrough, fin",
         executable_examples: EXAMPLES,
+        example_queries: &[crate::composed::MT940_ROLL_FORWARD],
     }
 }
 
@@ -130,6 +131,7 @@ pub fn mt942_lines() -> PerMessageTable {
         keywords: "mt942, interim report, statement lines, 61, 86, narrative, intraday, \
                    reconciliation, passthrough, fin",
         executable_examples: EXAMPLES_942,
+        example_queries: &[],
     }
 }
 

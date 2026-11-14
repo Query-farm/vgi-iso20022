@@ -187,3 +187,25 @@ pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
         .collect();
     format!("[{}]", items.join(","))
 }
+
+/// One `{description, sql}` entry of a `vgi.example_queries` list.
+#[derive(Debug, Clone, Copy)]
+pub struct Example {
+    pub description: &'static str,
+    pub sql: &'static str,
+}
+
+/// Encode examples as the JSON array `vgi.example_queries` carries.
+pub fn examples_json(examples: &[Example]) -> String {
+    let items: Vec<String> = examples
+        .iter()
+        .map(|e| {
+            format!(
+                "{{\"description\":\"{}\",\"sql\":\"{}\"}}",
+                json_esc(e.description),
+                json_esc(e.sql)
+            )
+        })
+        .collect();
+    format!("[{}]", items.join(","))
+}

@@ -22,8 +22,13 @@ pub fn parse(xml: &str) -> Vec<Statement> {
     let msg_id = grp.and_then(|g| g.text_at(&["MsgId"]));
     let creation_dt = grp.and_then(|g| datetime_at(g, &["CreDtTm"]));
 
+    let docs = dom::split_children(xml, "BkToCstmrDbtCdtNtfctn", "Ntfctn");
     body.children_named("Ntfctn")
-        .map(|n| statement_of(n, msg_id.clone(), creation_dt))
+        .enumerate()
+        .map(|(i, n)| Statement {
+            raw: docs.get(i).cloned().unwrap_or_else(|| xml.to_string()),
+            ..statement_of(n, msg_id.clone(), creation_dt)
+        })
         .collect()
 }
 
@@ -82,5 +87,18 @@ mod tests {
             Some("FR1420041010050500013M02606")
         );
         assert_eq!(r.end_to_end_id.as_deref(), Some("E2E-DEBIT-9"));
+    }
+
+    #[test]
+    fn multi_notification_raw_is_narrowed_to_each_notification() {
+        let xml = r#"<Document><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>M</MsgId></GrpHdr><Ntfctn><Id>N1</Id><Ntry><Amt Ccy="EUR">1.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry></Ntfctn><Ntfctn><Id>N2</Id><Ntry><Amt Ccy="EUR">2.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
+        let s = parse(xml);
+        assert_eq!(s.len(), 2);
+        let e1 = parse_entries(&s[0].raw);
+        let e2 = parse_entries(&s[1].raw);
+        assert_eq!(e1.len(), 1);
+        assert_eq!(e1[0].credit_debit.as_deref(), Some("DBIT"));
+        assert_eq!(e2.len(), 1);
+        assert_eq!(e2[0].credit_debit.as_deref(), Some("CRDT"));
     }
 }

@@ -101,6 +101,7 @@ pub fn table() -> ReadTable {
         keywords: "mt940, swift mt, bank statement, opening balance, closing balance, 60F, 62F, \
                    statement lines, reconciliation, fin",
         executable_examples: EXAMPLES,
+        example_queries: &[crate::composed::MT940_ROLL_FORWARD],
     }
 }
 

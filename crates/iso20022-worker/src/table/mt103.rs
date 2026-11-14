@@ -148,6 +148,7 @@ pub fn table() -> ReadTable {
         keywords: "mt103, swift mt, credit transfer, ordering customer, beneficiary, 32A, 50K, 59, \
                    uetr, end to end id, payments, fin",
         executable_examples: EXAMPLES,
+        example_queries: &[crate::composed::MT103_PACS008_EQUIVALENCE],
     }
 }
 

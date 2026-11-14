@@ -11,7 +11,7 @@ const EXAMPLES: &str = r#"[{"description":"Parse an inline camt.054 debit/credit
 /// Parse one file's camt.054 notifications into a batch.
 pub fn build(path: &str, content: &str) -> arrow_array::RecordBatch {
     let rows = core::parse(content);
-    build_rows(path, content, &rows)
+    build_rows(path, &rows)
 }
 
 /// The `camt054_read` table-function descriptor.
@@ -30,5 +30,6 @@ pub fn table() -> ReadTable {
         keywords: "camt.054, camt054, BkToCstmrDbtCdtNtfctn, notification, debit credit advice, \
                    iso 20022, entries, reconciliation",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }

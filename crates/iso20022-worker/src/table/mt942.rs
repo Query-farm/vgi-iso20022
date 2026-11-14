@@ -92,5 +92,6 @@ pub fn table() -> ReadTable {
         keywords: "mt942, swift mt, interim report, floor limit, 34F, 90D, 90C, intraday, \
                    statement lines, fin",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }

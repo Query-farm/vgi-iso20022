@@ -26,6 +26,10 @@ pub struct Statement {
     pub entry_count: i32,
     pub sum_credits: Option<Decimal>,
     pub sum_debits: Option<Decimal>,
+    /// The source document narrowed to just this statement (every other `Stmt`
+    /// removed; see [`dom::split_children`]), carried as the reader's `raw`
+    /// column so `camt053_entries` explodes only this statement's entries.
+    pub raw: String,
 }
 
 /// Parse a camt.053 document into one row per `Stmt`.
@@ -40,8 +44,13 @@ pub fn parse(xml: &str) -> Vec<Statement> {
     let msg_id = grp.and_then(|g| g.text_at(&["MsgId"]));
     let creation_dt = grp.and_then(|g| datetime_at(g, &["CreDtTm"]));
 
+    let docs = dom::split_children(xml, "BkToCstmrStmt", "Stmt");
     body.children_named("Stmt")
-        .map(|stmt| statement_of(stmt, msg_id.clone(), creation_dt))
+        .enumerate()
+        .map(|(i, stmt)| Statement {
+            raw: docs.get(i).cloned().unwrap_or_else(|| xml.to_string()),
+            ..statement_of(stmt, msg_id.clone(), creation_dt)
+        })
         .collect()
 }
 
@@ -76,6 +85,7 @@ pub(crate) fn statement_of(
         entry_count,
         sum_credits: decimal_at(stmt, &["TxsSummry", "TtlCdtNtries", "Sum"]),
         sum_debits: decimal_at(stmt, &["TxsSummry", "TtlDbtNtries", "Sum"]),
+        raw: String::new(),
     }
 }
 
@@ -128,6 +138,30 @@ mod tests {
         assert_eq!(r.ccy.as_deref(), Some("EUR"));
         assert_eq!(r.entry_count, 1);
         assert_eq!(r.sum_credits, Some(Decimal::from_str("500.00").unwrap()));
+    }
+
+    #[test]
+    fn multi_statement_raw_is_narrowed_to_each_statement() {
+        let xml = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>M</MsgId></GrpHdr>
+<Stmt><Id>S1</Id><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry></Stmt>
+<Stmt><Id>S2</Id><Ntry><Amt Ccy="EUR">7.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry><Ntry><Amt Ccy="EUR">8.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry></Stmt>
+</BkToCstmrStmt></Document>"#;
+        let s = parse(xml);
+        assert_eq!(s.len(), 2);
+        // Each row's raw re-parses as a one-statement document with its own header...
+        for (r, id) in s.iter().zip(["S1", "S2"]) {
+            let again = parse(&r.raw);
+            assert_eq!(again.len(), 1);
+            assert_eq!(again[0].stmt_id.as_deref(), Some(id));
+            assert_eq!(again[0].msg_id.as_deref(), Some("M"));
+        }
+        // ...so exploding it yields only that statement's entries.
+        assert_eq!(parse_entries(&s[0].raw).len(), 1);
+        let e2 = parse_entries(&s[1].raw);
+        assert_eq!(e2.len(), 2);
+        assert!(e2.iter().all(|e| e.credit_debit.as_deref() == Some("DBIT")));
+        // A single-statement document keeps its source byte for byte.
+        assert_eq!(parse(XML)[0].raw, XML);
     }
 
     #[test]

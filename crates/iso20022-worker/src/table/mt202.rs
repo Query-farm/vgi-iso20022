@@ -88,5 +88,6 @@ pub fn table() -> ReadTable {
         keywords: "mt202, mt202 cov, swift mt, fi transfer, cover payment, correspondent banking, \
                    beneficiary institution, uetr, fin",
         executable_examples: EXAMPLES,
+        example_queries: &[],
     }
 }

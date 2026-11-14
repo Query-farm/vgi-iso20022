@@ -112,6 +112,28 @@ FROM mt942_read('data/mt942/*.txt');
 ----
 true
 
+# --- camt.053 with several statements: each row's raw explodes only its own
+# entries (regression: every row used to re-explode the first Stmt's entries).
+query TIRT
+SELECT stmt_id, entry_idx, amount, credit_debit
+FROM camt053_entries((SELECT stmt_id, raw FROM camt053_read('<Document><BkToCstmrStmt><GrpHdr><MsgId>M</MsgId></GrpHdr><Stmt><Id>S1</Id><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry></Stmt><Stmt><Id>S2</Id><Ntry><Amt Ccy="EUR">7.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry><Ntry><Amt Ccy="EUR">8.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry></Stmt></BkToCstmrStmt></Document>')))
+ORDER BY stmt_id, entry_idx;
+----
+S1	0	500.000000000	CRDT
+S2	0	7.000000000	DBIT
+S2	1	8.000000000	DBIT
+
+# --- Composed: pacs.008 joined to its pacs.002 status report on UETR -------
+query TTT
+SELECT p.end_to_end_id, s.tx_status, s.status_reason_code
+FROM pacs008_read('<Document><FIToFICstmrCdtTrf><CdtTrfTxInf><PmtId><EndToEndId>E2E-A</EndToEndId><UETR>u-a</UETR></PmtId></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-B</EndToEndId><UETR>u-b</UETR></PmtId></CdtTrfTxInf></FIToFICstmrCdtTrf></Document>') p
+LEFT JOIN pacs002_read('<Document><FIToFIPmtStsRpt><TxInfAndSts><OrgnlUETR>u-b</OrgnlUETR><TxSts>RJCT</TxSts><StsRsnInf><Rsn><Cd>AM04</Cd></Rsn></StsRsnInf></TxInfAndSts></FIToFIPmtStsRpt></Document>') s
+  ON s.orig_uetr = p.uetr
+ORDER BY p.end_to_end_id;
+----
+E2E-A	NULL	NULL
+E2E-B	RJCT	AM04
+
 statement ok
 USE memory;
 

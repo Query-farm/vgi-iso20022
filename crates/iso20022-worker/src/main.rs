@@ -17,7 +17,9 @@
 //! pure parse engine lives in the `iso20022-core` crate; the `scalar/`, `table/`,
 //! and `table_in_out/` modules are thin Arrow adapters over it.
 
-use iso20022_worker::meta::{agent_test_tasks_json, keywords_json, object_tags, AgentTask};
+use iso20022_worker::meta::{
+    agent_test_tasks_json, examples_json, keywords_json, object_tags, AgentTask, Example,
+};
 use iso20022_worker::{scalar, table, table_in_out};
 use vgi::catalog::{CatSchema, CatView, CatalogModel};
 use vgi::Worker;
@@ -186,8 +188,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 // function's doc_md rather than executed here — VGI902).
                 (
                     "vgi.example_queries".to_string(),
-                    r#"[{"description":"Sniff the SWIFT MT message type of an inline FIN message.","sql":"SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}') AS mt"},{"description":"Read the exact :32A: interbank settled amount of an inline MT103 as a fixed-scale decimal.","sql":"SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount"},{"description":"Validate an inline pacs.008 message and read the ok flag.","sql":"SELECT (iso20022.main.iso20022_validate('<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok AS ok"}]"#
-                        .to_string(),
+                    examples_json(&schema_examples()),
                 ),
             ],
             views: vec![supported_messages_view()],
@@ -196,6 +197,28 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         }],
         ..Default::default()
     }
+}
+
+/// The schema-level `vgi.example_queries`: three single-scalar starters, then
+/// every composed example (defined once in [`iso20022_worker::composed`]).
+fn schema_examples() -> Vec<Example> {
+    let mut v = vec![
+        Example {
+            description: "Sniff the SWIFT MT message type of an inline FIN message.",
+            sql: "SELECT iso20022.main.iso20022_mt_type('{1:F01X}{2:I103X}{4:\n:20:R\n-}') AS mt",
+        },
+        Example {
+            description: "Read the exact :32A: interbank settled amount of an inline MT103 as a \
+                          fixed-scale decimal.",
+            sql: "SELECT iso20022.main.iso20022_mt103_amount('{1:F01X}{2:I103X}{4:\n:20:R\n:32A:260101EUR1234,56\n-}') AS amount",
+        },
+        Example {
+            description: "Validate an inline pacs.008 message and read the ok flag.",
+            sql: r#"SELECT (iso20022.main.iso20022_validate('<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"><FIToFICstmrCdtTrf><GrpHdr><MsgId>M</MsgId></GrpHdr></FIToFICstmrCdtTrf></Document>')).ok AS ok"#,
+        },
+    ];
+    v.extend_from_slice(iso20022_worker::composed::ALL);
+    v
 }
 
 // --- Inline sample messages for the agent-suitability suite ------------------
@@ -223,6 +246,13 @@ const PAIN001: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.00
 const CAMT053: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>CAMT053-1</MsgId><CreDtTm>2026-01-03T06:00:00Z</CreDtTm></GrpHdr><Stmt><Id>STMT-1</Id><ElctrncSeqNb>5</ElctrncSeqNb><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy><Ownr><Nm>ACME CORP</Nm></Ownr></Acct><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-01-02</Dt></BookgDt><ValDt><Dt>2026-01-02</Dt></ValDt><NtryDtls><TxDtls><Refs><EndToEndId>E2E-REF-001</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Stmt></BkToCstmrStmt></Document>"#;
 
 const CAMT054: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-1</MsgId><CreDtTm>2026-01-03T06:30:00Z</CreDtTm></GrpHdr><Ntfctn><Id>NTF-1</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id><Ccy>EUR</Ccy></Acct><Ntry><Amt Ccy="EUR">250.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-DEBIT-9</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
+
+// Composed-task messages: answering these needs two of the worker's objects.
+const PAIN001_BATCH: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09"><CstmrCdtTrfInitn><GrpHdr><MsgId>PAIN-9</MsgId><InitgPty><Nm>ACME CORP</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>PMT-9</PmtInfId><PmtMtd>TRF</PmtMtd><Dbtr><Nm>ACME CORP</Nm></Dbtr><DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct><CdtTrfTxInf><PmtId><EndToEndId>E2E-P1</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">1234.56</InstdAmt></Amt><Cdtr><Nm>WIDGETS SARL</Nm></Cdtr></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-P2</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">99.00</InstdAmt></Amt><Cdtr><Nm>GADGETS GMBH</Nm></Cdtr></CdtTrfTxInf><CdtTrfTxInf><PmtId><EndToEndId>E2E-P3</EndToEndId></PmtId><Amt><InstdAmt Ccy="EUR">410.00</InstdAmt></Amt><Cdtr><Nm>GIZMO BV</Nm></Cdtr></CdtTrfTxInf></PmtInf></CstmrCdtTrfInitn></Document>"#;
+
+const CAMT054_DEBITS: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>CAMT054-9</MsgId></GrpHdr><Ntfctn><Id>NTF-9</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Ntry><Amt Ccy="EUR">1234.56</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-P1</EndToEndId></Refs></TxDtls></NtryDtls></Ntry><Ntry><Amt Ccy="EUR">410.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><NtryDtls><TxDtls><Refs><EndToEndId>E2E-P3</EndToEndId></Refs></TxDtls></NtryDtls></Ntry></Ntfctn></BkToCstmrDbtCdtNtfctn></Document>"#;
+
+const CAMT053_TWO: &str = r#"<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>CAMT053-Q1</MsgId></GrpHdr><Stmt><Id>S-JAN</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1300.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry><Ntry><Amt Ccy="EUR">200.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry></Stmt><Stmt><Id>S-FEB</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct><Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1300.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1250.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal><Ntry><Amt Ccy="EUR">100.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry><Ntry><Amt Ccy="EUR">40.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts></Ntry></Stmt></BkToCstmrStmt></Document>"#;
 
 /// The catalog-level `vgi.agent_test_tasks` suite (VGI520 coverage / VGI920
 /// agent-simulation). Every registered object — the four scalars, the nine file
@@ -324,6 +354,24 @@ fn agent_tasks() -> Vec<AgentTask> {
             format!(
                 "How many debit (DBIT) entries does this inline camt.054 notification contain? \
                  Explode its entries. Message:\n{CAMT054}\nReturn one column named n."
+            ),
+        ),
+        AgentTask::new(
+            "unbooked_initiated_payment",
+            format!(
+                "ACME CORP sent this pain.001 credit-transfer initiation to its bank:\n{PAIN001_BATCH}\n\
+                 The bank then sent this camt.054 debit notification for the account:\n\
+                 {CAMT054_DEBITS}\nWhich initiated payment has no matching entry (by end-to-end \
+                 id) in the notification yet? Return one column named end_to_end_id."
+            ),
+        ),
+        AgentTask::new(
+            "camt053_unbalanced_statement",
+            format!(
+                "This camt.053 file carries two statements for one account:\n{CAMT053_TWO}\n\
+                 For which statement does the closing booked balance NOT equal the opening booked \
+                 balance plus its credit entries minus its debit entries? Return one column named \
+                 stmt_id."
             ),
         ),
         AgentTask::new(

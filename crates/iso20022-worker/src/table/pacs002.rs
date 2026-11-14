@@ -101,5 +101,6 @@ pub fn table() -> ReadTable {
         keywords: "pacs.002, pacs002, FIToFIPmtStsRpt, payment status, ACSC, RJCT, reason code, \
                    acknowledgement, rejection, iso 20022",
         executable_examples: EXAMPLES,
+        example_queries: &[crate::composed::PACS008_STATUS],
     }
 }

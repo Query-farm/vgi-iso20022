@@ -7,6 +7,7 @@
 
 pub mod arrow_io;
 pub mod cols;
+pub mod composed;
 pub mod meta;
 pub mod scalar;
 pub mod table;

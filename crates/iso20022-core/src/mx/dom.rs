@@ -86,6 +86,74 @@ pub fn parse(xml: &str) -> Option<Node> {
     root
 }
 
+/// Narrow a document to each `child` element of `parent` in turn.
+///
+/// Returns one string per `<child>` element that is a direct child of a
+/// `<parent>` element (both matched on local name), in document order. Each
+/// string is the original source with every *other* `<child>` removed: the
+/// prolog, root, group header, and any trailing siblings are kept byte for byte,
+/// so the result re-parses as a document holding exactly that one child. This is
+/// how a multi-`Stmt` camt.053 (or multi-`Ntfctn` camt.054) gives each reader row
+/// a `raw` that a per-message exploder can unnest without mixing in the other
+/// statements' entries. With zero or one matching child the source is returned
+/// unchanged (one copy per child). Total: malformed XML yields an empty vector.
+pub fn split_children(xml: &str, parent: &str, child: &str) -> Vec<String> {
+    let mut reader = Reader::from_str(xml);
+    let mut stack: Vec<String> = Vec::new();
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    let mut open: Option<(usize, usize)> = None; // (start offset, depth)
+    loop {
+        let before = reader.buffer_position() as usize;
+        let event = match reader.read_event() {
+            Ok(Event::Eof) => break,
+            Ok(e) => e,
+            Err(_) => return Vec::new(),
+        };
+        let after = reader.buffer_position() as usize;
+        match event {
+            Event::Start(e) => {
+                let name = local_name(e.name().as_ref());
+                if open.is_none()
+                    && name == child
+                    && stack.last().map(String::as_str) == Some(parent)
+                {
+                    open = Some((before, stack.len()));
+                }
+                stack.push(name);
+            }
+            Event::Empty(e) => {
+                if open.is_none()
+                    && local_name(e.name().as_ref()) == child
+                    && stack.last().map(String::as_str) == Some(parent)
+                {
+                    spans.push((before, after));
+                }
+            }
+            Event::End(_) => {
+                stack.pop();
+                if let Some((start, depth)) = open {
+                    if stack.len() == depth {
+                        spans.push((start, after));
+                        open = None;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let (Some(first), Some(last)) = (spans.first(), spans.last()) else {
+        return Vec::new();
+    };
+    if spans.len() == 1 {
+        return vec![xml.to_string()];
+    }
+    let (head, tail) = (&xml[..first.0], &xml[last.1..]);
+    spans
+        .iter()
+        .map(|&(s, e)| format!("{head}{}{tail}", &xml[s..e]))
+        .collect()
+}
+
 /// Append the pending text run (trimmed) to the open element, then reset it.
 fn flush_text(stack: &mut [Node], run: &mut Option<String>) {
     if let (Some(top), Some(buf)) = (stack.last_mut(), run.as_ref()) {
@@ -215,6 +283,27 @@ mod tests {
         let root = parse(xml).unwrap();
         assert_eq!(root.text_at(&["Nm"]).as_deref(), Some("Smith & Sons AG"));
         assert_eq!(root.child("Amt").unwrap().attr("Ccy"), Some("EUR"));
+    }
+
+    #[test]
+    fn split_children_keeps_header_and_one_child_each() {
+        let xml = "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S>1</n:S><n:S><n:S>nested</n:S></n:S><n:S/><n:T>t</n:T></n:B></n:Doc>";
+        let parts = split_children(xml, "B", "S");
+        assert_eq!(
+            parts,
+            vec![
+                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S>1</n:S><n:T>t</n:T></n:B></n:Doc>",
+                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S><n:S>nested</n:S></n:S><n:T>t</n:T></n:B></n:Doc>",
+                "<?xml version=\"1.0\"?><n:Doc xmlns:n=\"u\"><n:B><n:H>h</n:H><n:S/><n:T>t</n:T></n:B></n:Doc>",
+            ]
+        );
+        // One child: the source is returned unchanged; none / malformed: empty.
+        assert_eq!(
+            split_children("<B><S>1</S></B>", "B", "S"),
+            vec!["<B><S>1</S></B>"]
+        );
+        assert!(split_children("<B><H/></B>", "B", "S").is_empty());
+        assert!(split_children("<B><S>1</X></B>", "B", "S").is_empty());
     }
 
     #[test]
