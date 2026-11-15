@@ -85,9 +85,16 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  parsed as exact decimals so amount-equality joins hold, and dates use the SWIFT \
                  century pivot plus ISO 8601. The parsers are built on permissive open-source \
                  components and the open, freely published ISO 20022 message standard \
-                 (iso20022.org); the \
+                 ([iso20022.org](https://www.iso20022.org/)); the \
                  [source repository](https://github.com/Query-farm/vgi-iso20022) carries the full \
-                 catalog and examples."
+                 catalog and examples.\n\n## Sources and references\n\n\
+                 - [ISO 20022 message definitions]\
+                 (https://www.iso20022.org/iso-20022-message-definitions) — the published \
+                 pacs, pain and camt schemas the MX readers follow\n\
+                 - [Swift: About ISO 20022](https://www.swift.com/standards/iso-20022) — the \
+                 MT-to-MX migration and the CBPR+ usage rules `validate` checks\n\
+                 - [Swift: IBAN](https://www.swift.com/standards/data-standards/iban-international-bank-account-number) \
+                 — the IBAN format and check digits the validator applies"
                     .to_string(),
             ),
             (
