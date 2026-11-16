@@ -93,7 +93,7 @@ jobs:
         echo "::endgroup::"
 
         echo "::group::stdio entrypoint smoke (one path-free file, cold container per ATTACH)"
-        TRANSPORT=subprocess \
+        TRANSPORT=stdio \
           TEST_PATTERN="test/sql/scalars.test" \
           VGI_ISO20022_WORKER="docker run -i --rm $CITEST_IMAGE stdio" \
           ci/run-integration.sh

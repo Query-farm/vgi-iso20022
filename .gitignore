@@ -5,3 +5,4 @@
 duckdb_unittest_tempdir/
 # vgi-lint --ai review/simulate caches (local only)
 .vgi-*-cache.json
+/.tools/

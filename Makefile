@@ -1,58 +1,50 @@
-# vgi-iso20022 worker — dev, test, and lint targets.
-#
-# Usage:
-#   make test         # cargo unit/integration tests + SQL E2E (all transports)
-#   make test-unit    # cargo test --workspace (pure-Rust + Arrow-boundary tests)
-#   make test-sql     # build the release worker, run the DuckDB sqllogictest suite
-#                     #   over every transport (subprocess, http, unix)
-#   make lint         # clippy (deny warnings) + rustfmt --check
-#   make fmt          # rustfmt the workspace
-#   make vgi-lint     # metadata-quality gate (needs uv: `uv tool install` not required)
-#
-# The SQL E2E suite drives the compiled worker through DuckDB via
-# `haybarn-unittest` (install with: `uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'`;
-# haybarn 2.0 is required: the worker speaks VGI protocol vgi.v3 / 3.3).
+# vgi-iso20022 worker — common tasks. `make help` lists them.
+# Requires Rust (rustup) and uv (https://docs.astral.sh/uv/).
 
-WORKER         ?= $(CURDIR)/target/release/iso20022-worker
-SQL_RUNNER     ?= haybarn-unittest
+HAYBARN_VERSION  ?= 2.0.0rc11
+BIN              := iso20022-worker
+WORKER           := $(CURDIR)/target/release/$(BIN)
+TOOLS            := $(CURDIR)/.tools
+HAYBARN_UNITTEST := $(TOOLS)/bin/haybarn-unittest
+# The SQL suite runs over each of these (ci/run-integration.sh).
+TRANSPORTS       ?= stdio launch http
 
-.PHONY: test test-unit test-sql test-sql-subprocess test-sql-http test-sql-unix lint fmt build doc vgi-lint clean
+.DEFAULT_GOAL := help
+.PHONY: help build tools fmt lint test-unit test-sql test vgi-lint check clean
 
-# Full local gate: everything CI runs (bar the metadata linter, see `vgi-lint`).
-test: test-unit test-sql
+help: ## List the targets
+	@awk 'BEGIN{FS=":.*## "} /^[a-zA-Z_-]+:.*## /{printf "  %-10s %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 
-test-unit:
-	cargo test --workspace --all-features
+build: ## Build the worker (release)
+	cargo build --locked --release --bin $(BIN)
 
-# Build the release worker, then run the SQL E2E suite over every transport.
-test-sql: test-sql-subprocess test-sql-http test-sql-unix
+tools: ## Install the pinned SQL test runner into .tools
+	@test -x $(HAYBARN_UNITTEST) || { uv venv -q $(TOOLS) && uv pip install -q -p $(TOOLS) haybarn-unittest==$(HAYBARN_VERSION); }
 
-test-sql-subprocess: build
-	HAYBARN_UNITTEST="$(SQL_RUNNER)" WORKER_BIN="$(WORKER)" TRANSPORT=subprocess ci/run-integration.sh
-
-test-sql-http: build
-	HAYBARN_UNITTEST="$(SQL_RUNNER)" WORKER_BIN="$(WORKER)" TRANSPORT=http ci/run-integration.sh
-
-test-sql-unix: build
-	HAYBARN_UNITTEST="$(SQL_RUNNER)" WORKER_BIN="$(WORKER)" TRANSPORT=unix ci/run-integration.sh
-
-lint:
-	cargo clippy --all-targets --all-features -- -D warnings
-	cargo fmt --all -- --check
-
-fmt:
+fmt: ## Format the code
 	cargo fmt --all
 
-build:
-	cargo build --release --bin iso20022-worker
-
-doc:
+lint: ## Static checks: rustfmt, clippy, rustdoc
+	cargo fmt --all -- --check
+	cargo clippy --all-targets --all-features -- -D warnings
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 
-# Metadata-quality gate (matches CI's Query-farm/vgi-lint-check@v2 at fail-on=info).
-# Unpinned: always resolve the latest published vgi-lint-check, like CI's @v2 action.
-vgi-lint: build
-	uvx --prerelease=allow --from vgi-lint-check vgi-lint lint "$(WORKER)" --fail-on info --no-check-links
+test-unit: ## Unit tests (cargo test)
+	cargo test --workspace --all-features
 
-clean:
+test-sql: build tools ## SQL tests through DuckDB over stdio, launch and http (TRANSPORTS="stdio")
+	@set -e; for t in $(TRANSPORTS); do \
+	  echo "== test/sql over $$t"; \
+	  WORKER="$(WORKER)" HAYBARN_UNITTEST="$(HAYBARN_UNITTEST)" TRANSPORT=$$t ci/run-integration.sh; \
+	done
+
+test: test-unit test-sql ## Unit + SQL tests
+
+vgi-lint: build ## Metadata quality gate (vgi-lint at fail-on=info, as in CI)
+	uvx --prerelease=allow --from 'vgi-lint-check>=2,<3' vgi-lint lint "$(WORKER)" --fail-on info --no-check-links
+
+check: lint test-unit test-sql vgi-lint ## Everything CI runs. Done = this passes.
+
+clean: ## Remove build outputs and tool caches
 	cargo clean
+	rm -rf .tools

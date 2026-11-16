@@ -169,7 +169,7 @@ SQL end-to-end (DuckDB `vgi` extension + the committed golden fixtures under
 `data/`), across every transport (subprocess / unix / http):
 
 ```bash
-make test-sql        # or: HAYBARN_UNITTEST=… WORKER_BIN=… TRANSPORT=subprocess ci/run-integration.sh
+make test-sql        # or: WORKER=… TRANSPORT=stdio|launch|http ci/run-integration.sh
 ```
 
 ## Licensing & data residency
